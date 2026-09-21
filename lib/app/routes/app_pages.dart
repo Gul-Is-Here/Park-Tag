@@ -1,0 +1,93 @@
+import 'package:get/get.dart';
+
+import '../../modules/auth/bindings/auth_binding.dart';
+import '../../modules/auth/views/login_view.dart';
+import '../../modules/auth/views/signup_view.dart';
+import '../../modules/chat/bindings/chat_thread_binding.dart';
+import '../../modules/chat/views/chat_thread_view.dart';
+import '../../modules/dashboard/bindings/dashboard_binding.dart';
+import '../../modules/dashboard/views/dashboard_view.dart';
+import '../../modules/home/bindings/home_binding.dart';
+import '../../modules/home/views/home_view.dart';
+import '../../modules/onboarding/bindings/onboarding_binding.dart';
+import '../../modules/onboarding/views/onboarding_view.dart';
+import '../../modules/otp/bindings/otp_binding.dart';
+import '../../modules/otp/views/otp_view.dart';
+import '../../modules/splash/bindings/splash_binding.dart';
+import '../../modules/splash/views/splash_view.dart';
+import '../../modules/vehicle/bindings/review_vehicle_binding.dart';
+import '../../modules/vehicle/bindings/scan_binding.dart';
+import '../../modules/vehicle/views/review_vehicle_view.dart';
+import '../../modules/vehicle/views/scan_view.dart';
+import '../../modules/vehicle_details/bindings/edit_vehicle_binding.dart';
+import '../../modules/vehicle_details/bindings/vehicle_details_binding.dart';
+import '../../modules/vehicle_details/views/edit_vehicle_view.dart';
+import '../../modules/vehicle_details/views/vehicle_details_view.dart';
+import 'app_routes.dart';
+
+class AppPages {
+  static const initial = AppRoutes.splash;
+
+  static final routes = [
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashView(),
+      binding: SplashBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingView(),
+      binding: OnboardingBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.home,
+      page: () => const HomeView(),
+      binding: HomeBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.login,
+      page: () => const LoginView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.signUp,
+      page: () => const SignUpView(),
+      binding: AuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.otp,
+      page: () => const OtpView(),
+      binding: OtpBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.dashboard,
+      page: () => const DashboardView(),
+      binding: DashboardBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.addVehicleScan,
+      page: () => const ScanView(),
+      binding: ScanBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.addVehicleReview,
+      page: () => const ReviewVehicleView(),
+      binding: ReviewVehicleBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.vehicleDetails,
+      page: () => const VehicleDetailsView(),
+      binding: VehicleDetailsBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.editVehicle,
+      page: () => const EditVehicleView(),
+      binding: EditVehicleBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.chatThread,
+      page: () => const ChatThreadView(),
+      binding: ChatThreadBinding(),
+    ),
+  ];
+}

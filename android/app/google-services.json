@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "391458076633",
+    "project_id": "car-ping-9d4f8",
+    "storage_bucket": "car-ping-9d4f8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:391458076633:android:8d602ae924344a07fbcbc8",
+        "android_client_info": {
+          "package_name": "com.example.parktag_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1euBHJwicf_4qHj8dtmLSaCZo07MvnHU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

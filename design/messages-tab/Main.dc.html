@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Manrope', system-ui, sans-serif; }
+    a { color: #F4C21B; } a:hover { color: #F9D65C; }
+    .heading { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width:390px; min-height:844px; background:#161616; color:#F5F1E8; padding:20px 24px 24px 24px;">
+
+  <!-- Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <div class="heading" style="font-size:24px; font-weight:700; color:#F5F1E8;">Messages</div>
+      <div style="font-size:13px; font-weight:600; color:#8A8A85; margin-top:2px;">2 need your attention</div>
+    </div>
+    <div style="width:44px; height:44px; border-radius:14px; background:#1E1E1E; border:1.5px solid #33332E; display:flex; align-items:center; justify-content:center;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8A8A85" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    </div>
+  </div>
+
+  <!-- TODAY -->
+  <div style="margin-top:28px; font-size:12px; font-weight:600; color:#8A8A85; letter-spacing:0.08em;">TODAY</div>
+
+  <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+
+    <!-- Urgent, unread -->
+    <div style="background:#1E1E1E; border:1.5px solid #F4C21B; border-radius:16px; padding:14px 16px; position:relative;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:12px; background:#2A2210; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#F4C21B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 12l4-6h10l4 6M3 12v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:#F4C21B; letter-spacing:0.06em;">MOVE REQUEST</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">·</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">2m ago</div>
+          </div>
+          <div style="font-size:14.5px; font-weight:700; color:#F5F1E8; margin-top:4px; line-height:1.35;">Someone needs you to move your White Corolla</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:8px; background:#161616; border:1px solid #33332E; border-radius:8px; padding:4px 8px;">
+            <div style="width:10px; height:10px; border-radius:3px; background:#F5F1E8; border:1px solid #33332E;"></div>
+            <div style="font-size:12px; font-weight:600; color:#8A8A85;">LEA-2231</div>
+          </div>
+        </div>
+        <div style="width:9px; height:9px; border-radius:5px; background:#F4C21B; margin-top:4px; flex-shrink:0;"></div>
+      </div>
+    </div>
+
+    <!-- Urgent, unread #2 -->
+    <div style="background:#1E1E1E; border:1.5px solid #F4C21B; border-radius:16px; padding:14px 16px;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:12px; background:#2A2210; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#F4C21B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 12l4-6h10l4 6M3 12v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:#F4C21B; letter-spacing:0.06em;">MOVE REQUEST</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">·</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">41m ago</div>
+          </div>
+          <div style="font-size:14.5px; font-weight:700; color:#F5F1E8; margin-top:4px; line-height:1.35;">Someone needs you to move your Honda Civic</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:8px; background:#161616; border:1px solid #33332E; border-radius:8px; padding:4px 8px;">
+            <div style="width:10px; height:10px; border-radius:3px; background:#2B2B2B; border:1px solid #33332E;"></div>
+            <div style="font-size:12px; font-weight:600; color:#8A8A85;">LEB-4470</div>
+          </div>
+        </div>
+        <div style="width:9px; height:9px; border-radius:5px; background:#F4C21B; margin-top:4px; flex-shrink:0;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EARLIER -->
+  <div style="margin-top:26px; font-size:12px; font-weight:600; color:#8A8A85; letter-spacing:0.08em;">EARLIER</div>
+
+  <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+
+    <!-- Read -->
+    <div style="background:#1E1E1E; border:1.5px solid #33332E; border-radius:16px; padding:14px 16px;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:12px; background:#242420; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C5C58" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 12l4-6h10l4 6M3 12v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:#8A8A85; letter-spacing:0.06em;">MOVE REQUEST</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">·</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">Yesterday, 6:40 PM</div>
+          </div>
+          <div style="font-size:14.5px; font-weight:600; color:#8A8A85; margin-top:4px; line-height:1.35;">Someone needed you to move your Office Ride</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:8px; background:#161616; border:1px solid #262622; border-radius:8px; padding:4px 8px;">
+            <div style="width:10px; height:10px; border-radius:3px; background:#C2C2BE; border:1px solid #33332E;"></div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">LEC-9102</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Read #2 -->
+    <div style="background:#1E1E1E; border:1.5px solid #33332E; border-radius:16px; padding:14px 16px;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:12px; background:#242420; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#5C5C58" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 12l4-6h10l4 6M3 12v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:#8A8A85; letter-spacing:0.06em;">MOVE REQUEST</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">·</div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">Mon, 9:12 AM</div>
+          </div>
+          <div style="font-size:14.5px; font-weight:600; color:#8A8A85; margin-top:4px; line-height:1.35;">Someone needed you to move your White Corolla</div>
+          <div style="display:inline-flex; align-items:center; gap:6px; margin-top:8px; background:#161616; border:1px solid #262622; border-radius:8px; padding:4px 8px;">
+            <div style="width:10px; height:10px; border-radius:3px; background:#F5F1E8; border:1px solid #33332E;"></div>
+            <div style="font-size:12px; font-weight:600; color:#5C5C58;">LEA-2231</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

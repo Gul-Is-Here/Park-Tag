@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Manrope', system-ui, sans-serif; }
+    a { color: #F4C21B; } a:hover { color: #F9D65C; }
+    .heading { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width:390px; min-height:844px; background:#161616; color:#F5F1E8; padding:20px 24px 24px 24px;">
+
+  <!-- Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <div class="heading" style="font-size:24px; font-weight:700; color:#F5F1E8;">Inbox</div>
+      <div style="font-size:13px; font-weight:600; color:#8A8A85; margin-top:2px;">3 unread across 2 vehicles</div>
+    </div>
+    <div style="font-size:12.5px; font-weight:700; color:#F4C21B;">Mark all read</div>
+  </div>
+
+  <!-- Threads -->
+  <div style="display:flex; flex-direction:column; gap:10px; margin-top:24px;">
+
+    <!-- Unread thread 1 -->
+    <div style="background:#1E1E1E; border:1.5px solid #F4C21B; border-radius:16px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px;">
+      <div style="width:42px; height:42px; border-radius:21px; background:#2A2210; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4C21B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="font-size:14.5px; font-weight:700; color:#F5F1E8;">Anonymous</div>
+          <div style="font-size:12px; font-weight:600; color:#5C5C58; flex-shrink:0;">2m ago</div>
+        </div>
+        <div style="display:inline-flex; align-items:center; gap:6px; margin-top:5px; background:#161616; border:1px solid #33332E; border-radius:8px; padding:3px 8px;">
+          <div style="width:9px; height:9px; border-radius:3px; background:#F5F1E8; border:1px solid #33332E;"></div>
+          <div style="font-size:11.5px; font-weight:600; color:#8A8A85;">LEA-2231</div>
+        </div>
+        <div style="font-size:13.5px; font-weight:700; color:#F5F1E8; margin-top:8px; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Please move your car</div>
+      </div>
+      <div style="width:9px; height:9px; border-radius:5px; background:#F4C21B; margin-top:5px; flex-shrink:0;"></div>
+    </div>
+
+    <!-- Unread thread 2 -->
+    <div style="background:#1E1E1E; border:1.5px solid #F4C21B; border-radius:16px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px;">
+      <div style="width:42px; height:42px; border-radius:21px; background:#2A2210; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4C21B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="font-size:14.5px; font-weight:700; color:#F5F1E8;">Bilal Ahmed</div>
+          <div style="font-size:12px; font-weight:600; color:#5C5C58; flex-shrink:0;">41m ago</div>
+        </div>
+        <div style="display:inline-flex; align-items:center; gap:6px; margin-top:5px; background:#161616; border:1px solid #33332E; border-radius:8px; padding:3px 8px;">
+          <div style="width:9px; height:9px; border-radius:3px; background:#2B2B2B; border:1px solid #33332E;"></div>
+          <div style="font-size:11.5px; font-weight:600; color:#8A8A85;">LEB-4470</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:5px; margin-top:8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          <div style="font-size:13.5px; font-weight:700; color:#F5F1E8;">Voice note · 0:14</div>
+        </div>
+      </div>
+      <div style="width:9px; height:9px; border-radius:5px; background:#F4C21B; margin-top:5px; flex-shrink:0;"></div>
+    </div>
+
+    <!-- Unread thread 3 -->
+    <div style="background:#1E1E1E; border:1.5px solid #F4C21B; border-radius:16px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px;">
+      <div style="width:42px; height:42px; border-radius:21px; background:#2A2210; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4C21B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="font-size:14.5px; font-weight:700; color:#F5F1E8;">Anonymous</div>
+          <div style="font-size:12px; font-weight:600; color:#5C5C58; flex-shrink:0;">1h ago</div>
+        </div>
+        <div style="display:inline-flex; align-items:center; gap:6px; margin-top:5px; background:#161616; border:1px solid #33332E; border-radius:8px; padding:3px 8px;">
+          <div style="width:9px; height:9px; border-radius:3px; background:#F5F1E8; border:1px solid #33332E;"></div>
+          <div style="font-size:11.5px; font-weight:600; color:#8A8A85;">LEA-2231</div>
+        </div>
+        <div style="font-size:13.5px; font-weight:700; color:#F5F1E8; margin-top:8px; line-height:1.4;">Urgent — please respond immediately</div>
+      </div>
+      <div style="width:9px; height:9px; border-radius:5px; background:#F4C21B; margin-top:5px; flex-shrink:0;"></div>
+    </div>
+
+    <!-- Read thread -->
+    <div style="background:#1E1E1E; border:1.5px solid #33332E; border-radius:16px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px;">
+      <div style="width:42px; height:42px; border-radius:21px; background:#242420; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C5C58" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <div style="font-size:14.5px; font-weight:600; color:#8A8A85;">Sana Malik</div>
+          <div style="font-size:12px; font-weight:600; color:#5C5C58; flex-shrink:0;">Yesterday</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
+          <div style="display:inline-flex; align-items:center; gap:6px; background:#161616; border:1px solid #262622; border-radius:8px; padding:3px 8px;">
+            <div style="width:9px; height:9px; border-radius:3px; background:#C2C2BE; border:1px solid #33332E;"></div>
+            <div style="font-size:11.5px; font-weight:600; color:#5C5C58;">LEC-9102</div>
+          </div>
+          <div style="font-size:10.5px; font-weight:700; color:#7FBF7F; letter-spacing:0.04em; background:#182018; border:1px solid #2A3D2A; border-radius:6px; padding:2px 7px;">RESOLVED</div>
+        </div>
+        <div style="font-size:13.5px; font-weight:500; color:#8A8A85; margin-top:8px; line-height:1.4;">Thanks, moved it now!</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

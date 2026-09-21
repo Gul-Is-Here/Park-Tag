@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Manrope', system-ui, sans-serif; }
+    a { color: #F4C21B; } a:hover { color: #F9D65C; }
+    .heading { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  </style>
+</helmet>
+
+<div style="width:390px; min-height:844px; background:#161616; color:#F5F1E8; padding:0 0 40px 0;">
+
+  <!-- Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0 24px;">
+    <div style="width:40px; height:40px; border-radius:14px; background:#1E1E1E; border:1.5px solid #33332E; display:flex; align-items:center; justify-content:center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </div>
+    <div style="font-size:11px; font-weight:700; color:#F4C21B; letter-spacing:0.08em; background:#2A2210; border:1px solid #4A3D14; border-radius:20px; padding:6px 12px;">PENDING</div>
+  </div>
+
+  <div style="padding:22px 24px 0 24px; display:flex; flex-direction:column; gap:22px;">
+
+    <!-- Title -->
+    <div>
+      <div class="heading" style="font-size:21px; font-weight:700; color:#F5F1E8; line-height:1.3;">Someone needs you to move your White Corolla</div>
+      <div style="font-size:13px; font-weight:600; color:#5C5C58; margin-top:8px;">Today · 2:14 PM</div>
+    </div>
+
+    <!-- Vehicle reference -->
+    <div style="background:#1E1E1E; border:1.5px solid #33332E; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px;">
+      <div style="width:40px; height:40px; border-radius:12px; background:#242420; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8A8A85" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 12l4-6h10l4 6M3 12v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:14px; font-weight:700; color:#F5F1E8;">White Corolla</div>
+        <div style="font-size:12.5px; font-weight:500; color:#8A8A85; margin-top:2px;">Toyota Corolla Altis</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; background:#161616; border:1px solid #33332E; border-radius:8px; padding:5px 9px;">
+        <div style="width:10px; height:10px; border-radius:3px; background:#F5F1E8; border:1px solid #33332E;"></div>
+        <div style="font-size:12.5px; font-weight:600; color:#F5F1E8;">LEA-2231</div>
+      </div>
+    </div>
+
+    <!-- Requester -->
+    <div>
+      <div style="font-size:12px; font-weight:600; color:#8A8A85; letter-spacing:0.06em; margin-bottom:10px;">REQUESTED BY</div>
+      <div style="background:#1E1E1E; border:1.5px solid #33332E; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:20px; background:#242420; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8A85" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:700; color:#F5F1E8;">A nearby resident</div>
+          <div style="font-size:12.5px; font-weight:500; color:#8A8A85; margin-top:2px;">Identity kept private for everyone's safety</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div>
+      <div style="font-size:12px; font-weight:600; color:#8A8A85; letter-spacing:0.06em; margin-bottom:10px;">WHAT HAPPENED</div>
+      <div style="background:#1E1E1E; border:1.5px solid #33332E; border-radius:16px; padding:16px;">
+        <div style="font-size:14px; font-weight:500; color:#C9C9C4; line-height:1.55;">Your vehicle's QR sticker was scanned and is blocking another resident's spot. They've been notified that you're on your way.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Actions -->
+  <div style="padding:28px 24px 0 24px; display:flex; flex-direction:column; gap:12px;">
+    <div style="height:52px; border-radius:14px; background:#F4C21B; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#161616" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <div class="heading" style="font-size:15px; font-weight:600; color:#161616;">I'm on my way</div>
+    </div>
+    <div style="height:52px; border-radius:14px; border:1.5px solid #33332E; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      <div class="heading" style="font-size:15px; font-weight:600; color:#F5F1E8;">Mark as Resolved</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
