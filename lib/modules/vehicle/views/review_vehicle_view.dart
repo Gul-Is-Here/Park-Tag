@@ -67,18 +67,70 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                 const SizedBox(height: 24),
                 AspectRatio(
                   aspectRatio: 326 / 88,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF33332E), width: 1.5),
-                      image: DecorationImage(
-                        image: FileImage(File(controller.rcCardPath!)),
-                        fit: BoxFit.cover,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                          image: DecorationImage(
+                            image: FileImage(File(controller.rcCardPath!)),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
-                    ),
+                      Obx(() {
+                        if (!controller.isScanningRcCard.value) return const SizedBox.shrink();
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            color: Colors.black54,
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.yellow),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Reading card…',
+                                  style: AppTextStyles.subtitle.copyWith(color: Colors.white, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
+                Obx(() {
+                  if (!controller.ocrFailed.value || controller.isScanningRcCard.value) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: GestureDetector(
+                      onTap: controller.retryOcrScan,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.refresh, size: 16, color: AppColors.yellow),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Retry scan',
+                            style: AppTextStyles.linkTextEmphasis.copyWith(color: AppColors.yellow),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
               ],
               const SizedBox(height: 28),
               Row(

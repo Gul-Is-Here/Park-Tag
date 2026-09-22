@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A resident's own profile (FR-01/FR-08).
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // Sign-up checks "is this phone already registered" before the
+      // resident is signed in, and Login needs to read another user's doc
+      // to resolve phone -> uid, so registration lookups stay public read.
+      allow read: if true;
+
+      match /vehicles/{vehicleId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // FR-04: the denormalized public copy of a vehicle, keyed by the same
+    // id its QR sticker encodes. Anyone who scans the sticker must be able
+    // to read it without signing in; only the owning resident may write it
+    // (writes go through FirebaseVehicleService.saveVehicle at scan-save time).
+    match /vehicles/{vehicleId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerUid;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+    }
+
+    // FR-04/FR-05/FR-06/FR-07: one scan-triggered conversation thread per
+    // (vehicle, scanner) pair — doc id is `{vehicleId}_{scannerId}` (see
+    // ConversationService.conversationIdFor), so different people scanning
+    // the same sticker never land in the same thread. Anonymous scanners
+    // need to create/read/update it from the public Scan Contact Page (send
+    // a message, toggle resolved); only the owner may read their own Inbox
+    // list via the ownerUid query.
+    // `scannerUid` (FR-09) and the initial room creation for an
+    // authenticated in-app scan are only ever written by
+    // linkScannerIdentity/resolveVehicleAndOpenChat via the Admin SDK,
+    // which bypasses these rules entirely — those two client-side rules
+    // below exist only for the anonymous web Scan Contact Page's direct
+    // writes (first message, resolved toggle, owner replies). An
+    // authenticated client is still restricted to acting as whichever
+    // side of the conversation it actually is, as defense in depth
+    // alongside the trusted Cloud Functions.
+    match /conversations/{conversationId} {
+      allow read: if true;
+      allow create: if request.resource.data.ownerUid is string
+        && (request.auth == null || request.auth.uid == request.resource.data.scannerId);
+      allow update: if request.auth == null
+        || request.auth.uid == resource.data.ownerUid
+        || request.auth.uid == resource.data.scannerUid;
+
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if request.resource.data.sender in ['owner', 'scanner']
+          && request.resource.data.text is string;
+      }
+    }
+  }
+}

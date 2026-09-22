@@ -1,4 +1,4 @@
-package com.example.parktag_app
+package com.parktagapp.app
 
 import io.flutter.embedding.android.FlutterActivity
 

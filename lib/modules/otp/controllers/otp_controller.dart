@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
+import '../../../app/services/deep_link_service.dart';
+import '../../../app/services/push_notification_service.dart';
 
 class OtpController extends GetxController {
   static const codeLength = 6;
@@ -28,6 +30,8 @@ class OtpController extends GetxController {
   String verificationId;
 
   final _authService = Get.find<AuthService>();
+  final _pushService = Get.find<PushNotificationService>();
+  final _deepLinkService = Get.find<DeepLinkService>();
 
   final digitControllers = List.generate(codeLength, (_) => TextEditingController());
   final focusNodes = List.generate(codeLength, (_) => FocusNode());
@@ -97,8 +101,28 @@ class OtpController extends GetxController {
       if (mode == 'signUp') {
         await _authService.createResidentProfile(uid: uid, name: name ?? '', phone: '+92$phone', cnic: cnic);
       }
+
+      // A QR/deep-link scan that brought this resident here to
+      // register/log in must not just dump them on the home screen — it
+      // takes priority over the usual post-auth routing (commPreference
+      // for a fresh sign-up, dashboard for a login) and resumes straight
+      // into the chat that link pointed at.
+      final pendingScan = _deepLinkService.consumePendingVehicleScan();
+      if (pendingScan != null) {
+        await _pushService.syncToken();
+        isVerifying.value = false;
+        Get.offAllNamed(AppRoutes.dashboard);
+        await _deepLinkService.resolveAndOpenChat(pendingScan);
+        return;
+      }
+
       isVerifying.value = false;
-      Get.offAllNamed(AppRoutes.dashboard);
+      if (mode == 'signUp') {
+        Get.offAllNamed(AppRoutes.commPreference);
+      } else {
+        await _pushService.syncToken();
+        Get.offAllNamed(AppRoutes.dashboard);
+      }
     } catch (_) {
       isVerifying.value = false;
       Get.snackbar('Verification failed', 'The code was incorrect or expired. Please try again.');

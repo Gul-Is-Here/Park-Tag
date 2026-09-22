@@ -2,19 +2,25 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../dashboard/models/vehicle_model.dart';
 import '../controllers/vehicle_details_controller.dart';
-import '../widgets/vehicle_qr_placeholder.dart';
 
 class VehicleDetailsView extends GetView<VehicleDetailsController> {
   const VehicleDetailsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vehicle = controller.vehicle;
+    // Reactive: editing this vehicle pops back into this same screen with
+    // the updated data (see VehicleDetailsController.editVehicle) instead
+    // of pushing a fresh copy of it, so this needs to rebuild in place.
+    return Obx(() => _buildContent(context, controller.vehicle));
+  }
 
+  Widget _buildContent(BuildContext context, VehicleModel vehicle) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -67,35 +73,76 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
               const SizedBox(height: 22),
 
               // QR card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.yellow, width: 1.5),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.ink,
-                        borderRadius: BorderRadius.circular(12),
+              RepaintBoundary(
+                key: controller.qrBoundaryKey,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.yellow, width: 1.5),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.ink,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: QrImageView(
+                          data: vehicle.qrScanUrl,
+                          size: 156,
+                          backgroundColor: AppColors.ink,
+                          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.background),
+                          dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: AppColors.background,
+                          ),
+                        ),
                       ),
-                      child: const VehicleQrPlaceholder(size: 156),
+                      const SizedBox(height: 14),
+                      Text(
+                        'SCAN TO VERIFY VEHICLE',
+                        style: AppTextStyles.label.copyWith(color: AppColors.yellow, letterSpacing: 0.4),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Show this to the parking attendant',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Obx(
+                () => GestureDetector(
+                  onTap: controller.isSharing.value ? null : controller.shareQrCode,
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF33332E), width: 1.5),
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'SCAN TO VERIFY VEHICLE',
-                      style: AppTextStyles.label.copyWith(color: AppColors.yellow, letterSpacing: 0.4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (controller.isSharing.value)
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.yellow),
+                          )
+                        else
+                          const Icon(Icons.ios_share, size: 16, color: AppColors.yellow),
+                        const SizedBox(width: 8),
+                        Text('Share QR Code', style: AppTextStyles.buttonLabel.copyWith(color: AppColors.ink, fontSize: 14)),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Show this to the parking attendant',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.muted),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 22),
@@ -269,7 +316,10 @@ class _VehiclePhoto extends StatelessWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFF33332E), width: 1.5),
-          image: DecorationImage(image: FileImage(File(path)), fit: BoxFit.cover),
+          image: DecorationImage(
+            image: path.startsWith('http') ? NetworkImage(path) : FileImage(File(path)) as ImageProvider,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );

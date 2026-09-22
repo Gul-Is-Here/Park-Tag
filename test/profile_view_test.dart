@@ -5,10 +5,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:parktag_app/app/routes/app_pages.dart';
 import 'package:parktag_app/app/routes/app_routes.dart';
 import 'package:parktag_app/app/services/auth_service.dart';
+import 'package:parktag_app/app/services/conversation_service.dart';
+import 'package:parktag_app/app/services/push_notification_service.dart';
+import 'package:parktag_app/app/services/vehicle_service.dart';
 import 'package:parktag_app/modules/dashboard/controllers/profile_controller.dart';
 import 'package:parktag_app/modules/dashboard/views/profile_view.dart';
 
 import 'support/fake_auth_service.dart';
+import 'support/fake_conversation_service.dart';
+import 'support/fake_push_notification_service.dart';
+import 'support/fake_vehicle_service.dart';
 
 void main() {
   setUpAll(() {
@@ -16,7 +22,12 @@ void main() {
     Get.testMode = true;
   });
 
-  setUp(Get.reset);
+  setUp(() {
+    Get.reset();
+    Get.put<ConversationService>(FakeConversationService());
+    Get.put<VehicleService>(FakeVehicleService());
+    Get.put<PushNotificationService>(FakePushNotificationService());
+  });
 
   FakeAuthService signedInFakeAuth() {
     final fakeAuth = FakeAuthService();

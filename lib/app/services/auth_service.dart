@@ -40,6 +40,22 @@ abstract class AuthService {
   /// Persists edits made on the Profile screen.
   Future<void> updateResidentProfile({required String uid, required String name});
 
+  /// Registers this device for chat push notifications (FR-05/FR-06) by
+  /// adding its FCM token to the resident's profile — a resident may have
+  /// more than one device signed in, so tokens accumulate in a set rather
+  /// than overwriting a single field.
+  Future<void> saveFcmToken({required String uid, required String token});
+
+  /// Called on sign-out so a stale token on a shared/reset device doesn't
+  /// keep receiving another resident's notifications.
+  Future<void> removeFcmToken({required String uid, required String token});
+
+  /// Saves the choice made on the one-time "app or web?" prompt shown right
+  /// after registration (FR-09) — 'app' or 'web'. Drives whether Splash
+  /// pushes hard for FCM/push UX or keeps steering the resident back to the
+  /// web chat link.
+  Future<void> saveCommunicationPreference({required String uid, required String preference});
+
   /// Permanently removes the resident's Firestore profile and Firebase Auth
   /// account (FR-01.4).
   Future<void> deleteResidentAccount(String uid);
@@ -160,6 +176,27 @@ class FirebaseAuthService implements AuthService {
   Future<void> updateResidentProfile({required String uid, required String name}) async {
     await _firestore.collection('users').doc(uid).set({
       'name': name,
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveFcmToken({required String uid, required String token}) async {
+    await _firestore.collection('users').doc(uid).set({
+      'fcmTokens': FieldValue.arrayUnion([token]),
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> removeFcmToken({required String uid, required String token}) async {
+    await _firestore.collection('users').doc(uid).set({
+      'fcmTokens': FieldValue.arrayRemove([token]),
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveCommunicationPreference({required String uid, required String preference}) async {
+    await _firestore.collection('users').doc(uid).set({
+      'communicationPreference': preference,
     }, SetOptions(merge: true));
   }
 

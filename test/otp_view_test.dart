@@ -5,8 +5,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:parktag_app/app/routes/app_pages.dart';
 import 'package:parktag_app/app/routes/app_routes.dart';
 import 'package:parktag_app/app/services/auth_service.dart';
+import 'package:parktag_app/app/services/conversation_service.dart';
+import 'package:parktag_app/app/services/deep_link_service.dart';
+import 'package:parktag_app/app/services/push_notification_service.dart';
 
 import 'support/fake_auth_service.dart';
+import 'support/fake_conversation_service.dart';
+import 'support/fake_deep_link_service.dart';
+import 'support/fake_push_notification_service.dart';
 
 void main() {
   setUpAll(() {
@@ -16,6 +22,9 @@ void main() {
   setUp(() {
     Get.reset();
     Get.put<AuthService>(FakeAuthService());
+    Get.put<PushNotificationService>(FakePushNotificationService());
+    Get.put<ConversationService>(FakeConversationService());
+    Get.put<DeepLinkService>(FakeDeepLinkService());
   });
 
   testWidgets('Login sends OTP and navigates to the OTP screen with the phone number', (

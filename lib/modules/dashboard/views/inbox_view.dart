@@ -72,6 +72,32 @@ class InboxView extends GetView<InboxController> {
             ],
           );
         }),
+        Obx(() {
+          final sent = controller.sentThreads;
+          if (sent.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(top: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sent',
+                  style: AppTextStyles.headingSm.copyWith(color: AppColors.ink, fontSize: 16),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Conversations you started by messaging other cars.',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: 14),
+                for (final thread in sent) ...[
+                  InboxThreadCard(thread: thread),
+                  if (thread != sent.last) const SizedBox(height: 10),
+                ],
+              ],
+            ),
+          );
+        }),
       ],
     );
   }

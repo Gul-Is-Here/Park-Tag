@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../dashboard/controllers/home_tab_controller.dart';
-import '../../dashboard/models/vehicle_model.dart';
+import '../../../app/services/auth_service.dart';
+import '../../../app/services/rc_ocr_service.dart';
+import '../../../app/services/vehicle_service.dart';
+import '../utils/rc_card_parser.dart';
 
 class ReviewVehicleController extends GetxController {
   ReviewVehicleController({required this.rcCardPath});
@@ -27,30 +29,68 @@ class ReviewVehicleController extends GetxController {
 
   final vehiclePhotos = <XFile>[].obs;
   final isSaving = false.obs;
+  final isScanningRcCard = false.obs;
+
+  /// True after a failed OCR attempt (couldn't read the photo at all, e.g.
+  /// a processing error) — drives a "Retry scan" affordance on the Review
+  /// screen, separate from just leaving fields editable for manual entry.
+  final ocrFailed = false.obs;
 
   final _picker = ImagePicker();
+  final _authService = Get.find<AuthService>();
+  final _vehicleService = Get.find<VehicleService>();
+  final _ocrService = Get.find<RcOcrService>();
 
   @override
   void onInit() {
     super.onInit();
-    if (rcCardPath != null) {
-      _applyMockOcrResult();
+    final path = rcCardPath;
+    if (path != null) {
+      _runOcr(path);
     }
   }
 
-  // TODO(FR-02.1): replace with real Google ML Kit text recognition (with
-  // ChatGPT Vision fallback for low-confidence reads) run against
-  // rcCardPath. This stands in with sample values so the review/save flow
-  // is usable end to end.
-  void _applyMockOcrResult() {
-    make.text = 'Toyota';
-    model.text = 'Corolla Altis';
-    plateNumber.text = 'LEA-2231';
-    color.text = 'White';
-    dateOfRegistration.text = '14 Mar 2022';
-    engineNumber.text = '2ZR-4498231';
-    chassisNumber.text = 'MR053CE3204119876';
-    address.text = '123-B, Model Town, Lahore';
+  /// FR-02.1: reads the captured RC card photo on-device with Google ML
+  /// Kit, then applies best-effort field extraction (see
+  /// [parseRcCardText]) — every field it fills stays editable below, since
+  /// OCR on a photographed card is never guaranteed to be exact.
+  Future<void> _runOcr(String path) async {
+    isScanningRcCard.value = true;
+    ocrFailed.value = false;
+    try {
+      final recognizedText = await _ocrService.recognizeText(path);
+      final fields = parseRcCardText(recognizedText);
+
+      if (fields.make != null) make.text = fields.make!;
+      if (fields.model != null) model.text = fields.model!;
+      if (fields.plateNumber != null) plateNumber.text = fields.plateNumber!;
+      if (fields.color != null) color.text = fields.color!;
+      if (fields.dateOfRegistration != null) dateOfRegistration.text = fields.dateOfRegistration!;
+      if (fields.engineNumber != null) engineNumber.text = fields.engineNumber!;
+      if (fields.chassisNumber != null) chassisNumber.text = fields.chassisNumber!;
+      if (fields.address != null) address.text = fields.address!;
+
+      if (fields.make == null && fields.plateNumber == null && fields.chassisNumber == null) {
+        Get.snackbar(
+          "Couldn't read much from that photo",
+          'Please check the fields below and fill in anything missing.',
+        );
+      }
+    } catch (_) {
+      ocrFailed.value = true;
+      Get.snackbar('Scan failed', 'Retry the scan, or fill in the details manually below.');
+    } finally {
+      isScanningRcCard.value = false;
+    }
+  }
+
+  /// Re-runs OCR against the same captured photo — the "Retry scan"
+  /// affordance shown when [_runOcr] fails outright. Manual editing of
+  /// every field below remains available regardless.
+  Future<void> retryOcrScan() {
+    final path = rcCardPath;
+    if (path == null) return Future.value();
+    return _runOcr(path);
   }
 
   bool get _hasRequiredFields =>
@@ -72,7 +112,7 @@ class ReviewVehicleController extends GetxController {
     vehiclePhotos.removeAt(index);
   }
 
-  void save() {
+  Future<void> save() async {
     if (!canSave) {
       final missing = <String>[
         if (!_hasRequiredFields) 'make, model and plate number',
@@ -83,50 +123,41 @@ class ReviewVehicleController extends GetxController {
       return;
     }
 
-    isSaving.value = true;
-    // TODO(FR-02): persist the vehicle (and upload photos) to
-    // Firestore/Firebase Storage, and generate its QR sticker (FR-03).
-    // Not implemented yet — appending to the local list so the resident
-    // sees the vehicle they just saved.
-    if (Get.isRegistered<HomeTabController>()) {
-      Get.find<HomeTabController>().vehicles.add(
-        VehicleModel(
-          nickname: nickname.text.trim().isEmpty ? plateNumber.text.trim() : nickname.text.trim(),
-          makeModel: '${make.text.trim()} ${model.text.trim()}'.trim(),
-          plateNumber: plateNumber.text.trim(),
-          color: _swatchFor(color.text.trim()),
-          colorName: color.text.trim(),
-          dateOfRegistration: dateOfRegistration.text.trim(),
-          engineNumber: engineNumber.text.trim(),
-          chassisNumber: chassisNumber.text.trim(),
-          address: address.text.trim(),
-          photoPaths: vehiclePhotos.map((x) => x.path).toList(),
-        ),
-      );
+    final uid = _authService.currentUid;
+    if (uid == null) {
+      Get.snackbar('Not signed in', 'Please log in again and retry.');
+      return;
     }
-    isSaving.value = false;
 
-    Get.offAllNamed(AppRoutes.dashboard);
-    Get.snackbar('Vehicle saved', 'Its QR sticker will be ready on the next update.');
-  }
+    isSaving.value = true;
+    try {
+      final profile = await _authService.fetchResidentProfile(uid);
+      final ownerName = (profile?['name'] as String?)?.trim();
+      final localPhotoPaths = vehiclePhotos.map((x) => x.path).toList();
+      await _vehicleService.saveVehicle(
+        uid: uid,
+        ownerName: (ownerName == null || ownerName.isEmpty) ? 'A ParkTag resident' : ownerName,
+        nickname: nickname.text.trim().isEmpty ? plateNumber.text.trim() : nickname.text.trim(),
+        make: make.text.trim(),
+        model: model.text.trim(),
+        plateNumber: plateNumber.text.trim(),
+        colorName: color.text.trim(),
+        dateOfRegistration: dateOfRegistration.text.trim(),
+        engineNumber: engineNumber.text.trim(),
+        chassisNumber: chassisNumber.text.trim(),
+        address: address.text.trim(),
+        localPhotoPaths: localPhotoPaths,
+      );
 
-  static Color _swatchFor(String name) {
-    switch (name.trim().toLowerCase()) {
-      case 'white':
-        return const Color(0xFFF5F1E8);
-      case 'black':
-        return const Color(0xFF2B2B2B);
-      case 'silver':
-        return const Color(0xFFC2C2BE);
-      case 'grey':
-      case 'gray':
-        return const Color(0xFF8A8A85);
-      case 'red':
-        return const Color(0xFFC1443C);
-      case 'blue':
-        return const Color(0xFF3E6FB0);
-      default:
-        return const Color(0xFF8A8A85);
+      // HomeTabController streams straight from Firestore (watchVehicles),
+      // so the new vehicle appears on the Home tab on its own — no local
+      // list to update here.
+      isSaving.value = false;
+      Get.offAllNamed(AppRoutes.dashboard);
+      Get.snackbar('Vehicle saved', 'Its QR sticker is ready — open the vehicle to view or share it.');
+    } catch (_) {
+      isSaving.value = false;
+      Get.snackbar('Could not save vehicle', 'Something went wrong. Please try again.');
     }
   }
 

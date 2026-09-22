@@ -8,6 +8,8 @@ class FakeAuthService implements AuthService {
   bool registerAllByDefault = true;
   final Set<String> registeredPhones = {};
   final Map<String, Map<String, dynamic>> profiles = {};
+  final Map<String, Set<String>> fcmTokens = {};
+  final Map<String, String> communicationPreferences = {};
   int _uidSeq = 0;
 
   bool _signedIn = false;
@@ -77,6 +79,21 @@ class FakeAuthService implements AuthService {
   @override
   Future<void> deleteResidentAccount(String uid) async {
     profiles.remove(uid);
+  }
+
+  @override
+  Future<void> saveFcmToken({required String uid, required String token}) async {
+    fcmTokens.putIfAbsent(uid, () => {}).add(token);
+  }
+
+  @override
+  Future<void> removeFcmToken({required String uid, required String token}) async {
+    fcmTokens[uid]?.remove(token);
+  }
+
+  @override
+  Future<void> saveCommunicationPreference({required String uid, required String preference}) async {
+    communicationPreferences[uid] = preference;
   }
 
   @override

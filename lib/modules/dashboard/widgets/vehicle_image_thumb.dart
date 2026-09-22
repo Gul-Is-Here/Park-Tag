@@ -26,12 +26,15 @@ class VehicleImageThumb extends StatelessWidget {
       ),
       child: path == null
           ? const Center(child: Icon(Icons.directions_car_rounded, color: AppColors.faint, size: 26))
-          : Image.file(
-              File(path),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.directions_car_rounded, color: AppColors.faint, size: 26)),
-            ),
+          : _buildImage(path),
     );
+  }
+
+  Widget _buildImage(String path) {
+    const fallback = Center(child: Icon(Icons.directions_car_rounded, color: AppColors.faint, size: 26));
+    if (path.startsWith('http')) {
+      return Image.network(path, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
+    }
+    return Image.file(File(path), fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback);
   }
 }

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
-import 'chat_message_model.dart';
+/// Which side of the conversation the signed-in resident viewing this
+/// thread is on — determines what the Chat screen shows in its header and
+/// which [ConversationService] method sending a message calls.
+enum ThreadViewerRole { owner, scanner }
 
 /// FR-05.5/FR-06: one scanner's message thread with a resident, scoped to
-/// a single vehicle.
+/// a single vehicle *and* a single scanner — see ConversationService's
+/// `conversationIdFor`. Backed 1:1 by a `conversations/{conversationId}`
+/// Firestore doc.
 class MessageThreadModel {
   const MessageThreadModel({
+    required this.conversationId,
     required this.scannerName,
     required this.plateNumber,
     required this.vehicleColor,
@@ -13,9 +19,11 @@ class MessageThreadModel {
     required this.timeLabel,
     this.unreadCount = 0,
     this.isResolved = false,
-    this.messages = const [],
+    this.ownerName = '',
+    this.viewerRole = ThreadViewerRole.owner,
   });
 
+  final String conversationId;
   final String scannerName;
   final String plateNumber;
   final Color vehicleColor;
@@ -23,24 +31,13 @@ class MessageThreadModel {
   final String timeLabel;
   final int unreadCount;
   final bool isResolved;
-  final List<ChatMessageModel> messages;
+
+  /// Only meaningful when [viewerRole] is [ThreadViewerRole.scanner] — the
+  /// vehicle owner's name, shown as the chat counterpart instead of
+  /// [scannerName] (which would just be the viewer's own name in that case).
+  final String ownerName;
+
+  final ThreadViewerRole viewerRole;
 
   bool get isAnonymous => scannerName == 'Anonymous';
-
-  MessageThreadModel copyWith({
-    int? unreadCount,
-    bool? isResolved,
-    List<ChatMessageModel>? messages,
-    String? lastMessagePreview,
-    String? timeLabel,
-  }) => MessageThreadModel(
-    scannerName: scannerName,
-    plateNumber: plateNumber,
-    vehicleColor: vehicleColor,
-    lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
-    timeLabel: timeLabel ?? this.timeLabel,
-    unreadCount: unreadCount ?? this.unreadCount,
-    isResolved: isResolved ?? this.isResolved,
-    messages: messages ?? this.messages,
-  );
 }

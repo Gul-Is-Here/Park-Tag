@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:parktag_app/app/services/auth_service.dart';
+import 'package:parktag_app/app/services/vehicle_service.dart';
 import 'package:parktag_app/modules/dashboard/controllers/home_tab_controller.dart';
 import 'package:parktag_app/modules/dashboard/models/vehicle_model.dart';
 import 'package:parktag_app/modules/vehicle_details/controllers/edit_vehicle_controller.dart';
 import 'package:parktag_app/modules/vehicle_details/views/edit_vehicle_view.dart';
+
+import 'support/fake_auth_service.dart';
+import 'support/fake_vehicle_service.dart';
 
 const _vehicle = VehicleModel(
   nickname: 'White Corolla',
@@ -26,7 +31,11 @@ void main() {
     Get.testMode = true;
   });
 
-  setUp(Get.reset);
+  setUp(() {
+    Get.reset();
+    Get.put<AuthService>(FakeAuthService());
+    Get.put<VehicleService>(FakeVehicleService());
+  });
 
   testWidgets('Edit screen pre-fills fields from the saved vehicle', (tester) async {
     final controller = Get.put(EditVehicleController(vehicle: _vehicle));

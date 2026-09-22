@@ -3,10 +3,12 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
+import '../../../app/services/push_notification_service.dart';
 import '../widgets/delete_account_dialog.dart';
 
 class ProfileController extends GetxController {
   final _authService = Get.find<AuthService>();
+  final _pushService = Get.find<PushNotificationService>();
 
   late final name = TextEditingController();
 
@@ -51,6 +53,7 @@ class ProfileController extends GetxController {
   }
 
   Future<void> logout() async {
+    await _pushService.unregisterToken();
     await _authService.signOut();
     Get.offAllNamed(AppRoutes.login);
     Get.snackbar('Logged out', "You've been signed out of ParkTag.");
@@ -60,6 +63,7 @@ class ProfileController extends GetxController {
     final confirmed = await Get.dialog<bool>(const DeleteAccountDialog());
     if (confirmed != true) return;
 
+    await _pushService.unregisterToken();
     final uid = _authService.currentUid;
     if (uid != null) {
       await _authService.deleteResidentAccount(uid);

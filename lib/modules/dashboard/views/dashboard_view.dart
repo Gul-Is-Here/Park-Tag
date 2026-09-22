@@ -21,12 +21,15 @@ class DashboardView extends GetView<DashboardController> {
         child: Obx(() => IndexedStack(index: controller.tabIndex.value, children: _tabs)),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: controller.openScanner,
+        onPressed: controller.openAddVehicle,
         backgroundColor: AppColors.yellow,
         foregroundColor: AppColors.background,
         elevation: 2,
         shape: const CircleBorder(),
-        child: const Icon(Icons.qr_code_scanner, size: 28),
+        // Adding a vehicle (RC card capture -> OCR) — the QR-to-chat
+        // scanner is the separate icon at the top of the Home tab, so this
+        // one intentionally isn't a QR icon.
+        child: const Icon(Icons.add_a_photo_outlined, size: 26),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Obx(

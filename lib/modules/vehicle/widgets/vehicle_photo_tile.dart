@@ -36,7 +36,12 @@ class VehiclePhotoTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.yellow, width: 1.5),
                 image: hasPhoto
-                    ? DecorationImage(image: FileImage(File(imagePath!)), fit: BoxFit.cover)
+                    ? DecorationImage(
+                        image: imagePath!.startsWith('http')
+                            ? NetworkImage(imagePath!) as ImageProvider
+                            : FileImage(File(imagePath!)),
+                        fit: BoxFit.cover,
+                      )
                     : null,
               ),
               child: hasPhoto

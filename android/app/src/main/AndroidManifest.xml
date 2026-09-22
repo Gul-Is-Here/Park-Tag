@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Android 13+ requires this to show any notification, including FCM
+         chat-message pushes (FR-05/FR-06). firebase_messaging's
+         requestPermission() call handles the runtime prompt. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="parktag_app"
         android:name="${applicationName}"
@@ -21,9 +25,30 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Keeps the Flutter engine from also trying to parse an
+                 incoming deep link into an initial route on its own — this
+                 app decides routing itself (app_links + SplashController),
+                 not Navigator 2.0/go_router. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- FR-09: the public Scan Contact Page's own URL
+                 (https://car-ping-9d4f8.web.app/scan/{vehicleId}), registered
+                 as a verified Android App Link — when this app is installed,
+                 tapping that link (from a QR scan, share, or reopening it
+                 after installing) opens straight into the app instead of a
+                 browser; see DeepLinkService. autoVerify requires
+                 /.well-known/assetlinks.json to be hosted on that domain
+                 listing this app's package name + release SHA-256
+                 fingerprint, or Android silently falls back to the browser. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="car-ping-9d4f8.web.app" android:pathPrefix="/scan"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

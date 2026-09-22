@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../app/routes/app_routes.dart';
 import '../../dashboard/controllers/home_tab_controller.dart';
 import '../../dashboard/models/vehicle_model.dart';
 
@@ -66,6 +65,7 @@ class EditVehicleController extends GetxController {
 
     isSaving.value = true;
     final updated = VehicleModel(
+      id: vehicle.id,
       nickname: nickname.text.trim().isEmpty ? plateNumber.text.trim() : nickname.text.trim(),
       makeModel: '${make.text.trim()} ${model.text.trim()}'.trim(),
       plateNumber: plateNumber.text.trim(),
@@ -87,7 +87,12 @@ class EditVehicleController extends GetxController {
     }
     isSaving.value = false;
 
-    Get.offNamed(AppRoutes.vehicleDetails, arguments: updated);
+    // Pop back to the Vehicle Details screen already underneath this one on
+    // the stack (it pushed us via Get.toNamed) rather than pushing a fresh
+    // one — pushing a second copy left two Vehicle Details routes, and two
+    // VehicleDetailsControllers, stacked at once, which crashed on the
+    // duplicate QR-card GlobalKey.
+    Get.back(result: updated);
     Get.snackbar('Changes saved', "${updated.nickname}'s details were updated.");
   }
 

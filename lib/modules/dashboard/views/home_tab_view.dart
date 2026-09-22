@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../controllers/home_tab_controller.dart';
@@ -30,14 +31,34 @@ class HomeTabView extends GetView<HomeTabController> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    controller.residentFirstName,
-                    style: AppTextStyles.headingLg.copyWith(
-                      color: AppColors.ink,
-                      fontSize: 24,
+                  Obx(
+                    () => Text(
+                      controller.residentFirstName.value.isEmpty ? 'there' : controller.residentFirstName.value,
+                      style: AppTextStyles.headingLg.copyWith(
+                        color: AppColors.ink,
+                        fontSize: 24,
+                      ),
                     ),
                   ),
                 ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Get.toNamed(AppRoutes.qrScanner),
+              child: Container(
+                width: 44,
+                height: 44,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                ),
+                child: const Icon(
+                  Icons.qr_code_2,
+                  color: AppColors.yellow,
+                  size: 20,
+                ),
               ),
             ),
             Container(

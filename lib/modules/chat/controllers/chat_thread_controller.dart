@@ -1,41 +1,77 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../dashboard/controllers/inbox_controller.dart';
+import '../../../app/services/conversation_service.dart';
 import '../../dashboard/models/chat_message_model.dart';
 import '../../dashboard/models/message_thread_model.dart';
 
 class ChatThreadController extends GetxController {
-  ChatThreadController({required MessageThreadModel thread}) : _originalThread = thread;
+  ChatThreadController({required this.thread});
 
-  /// The thread instance as looked up in [InboxController.threads] — kept
-  /// so edits can be written back by reference/index.
-  MessageThreadModel _originalThread;
+  final MessageThreadModel thread;
+  final _conversationService = Get.find<ConversationService>();
 
   final textController = TextEditingController();
-  late final messages = <ChatMessageModel>[..._originalThread.messages].obs;
-  late final isResolved = _originalThread.isResolved.obs;
+  final messages = <ChatMessageModel>[].obs;
+  late final isResolved = thread.isResolved.obs;
 
-  String get scannerName => _originalThread.scannerName;
-  String get plateNumber => _originalThread.plateNumber;
-  Color get vehicleColor => _originalThread.vehicleColor;
+  StreamSubscription<List<ConversationMessage>>? _messagesSub;
+  StreamSubscription<ConversationSummary?>? _metaSub;
+
+  String get scannerName => thread.scannerName;
+  String get plateNumber => thread.plateNumber;
+  Color get vehicleColor => thread.vehicleColor;
+
+  /// Who this screen's header should show as "who you're talking to" —
+  /// the scanner, from the owner's side; the owner, from the scanner's
+  /// side (never the viewer's own name).
+  String get counterpartName {
+    if (thread.viewerRole == ThreadViewerRole.owner) return thread.scannerName;
+    return thread.ownerName.isEmpty ? 'Car owner' : thread.ownerName;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    _messagesSub = _conversationService.watchMessages(thread.conversationId).listen((msgs) {
+      messages.assignAll(
+        msgs.map(
+          (m) => ChatMessageModel(
+            sender: m.sender == MessageSender.owner ? ChatSender.owner : ChatSender.scanner,
+            kind: ChatMessageKind.text,
+            timeLabel: _formatTime(m.createdAt),
+            text: m.text,
+          ),
+        ),
+      );
+    });
+    _metaSub = _conversationService.watchConversation(thread.conversationId).listen((summary) {
+      if (summary != null) isResolved.value = summary.resolved;
+    });
+  }
 
   @override
   void onReady() {
     super.onReady();
     // Opening a thread reads it — clear its unread badge in the Inbox.
-    // Deferred to onReady (post first frame) so this doesn't mutate
-    // InboxController's RxList while GetX is still mid-build for the
-    // push transition.
-    if (_originalThread.unreadCount > 0) _writeBack(unreadCount: 0);
+    // `unreadForOwner` is specifically the owner's flag, so only clear it
+    // when this viewer actually is the owner.
+    if (thread.viewerRole == ThreadViewerRole.owner && thread.unreadCount > 0) {
+      _conversationService.markReadByOwner(thread.conversationId);
+    }
   }
 
   void sendText() {
     final text = textController.text.trim();
     if (text.isEmpty) return;
-    messages.add(ChatMessageModel(sender: ChatSender.owner, kind: ChatMessageKind.text, timeLabel: 'Now', text: text));
     textController.clear();
-    _writeBack(lastMessagePreview: text, timeLabel: 'Now');
+    if (thread.viewerRole == ThreadViewerRole.owner) {
+      _conversationService.sendOwnerReply(conversationId: thread.conversationId, text: text);
+    } else {
+      _conversationService.sendAuthenticatedScannerReply(conversationId: thread.conversationId, text: text);
+    }
   }
 
   // TODO(FR-05.2): wire to the `record`/`just_audio` packages for real
@@ -56,30 +92,26 @@ class ChatThreadController extends GetxController {
 
   void markResolved() {
     isResolved.value = true;
-    _writeBack(isResolved: true);
+    _conversationService.setResolved(conversationId: thread.conversationId, resolved: true);
   }
 
   void markNotResolved() {
     isResolved.value = false;
-    _writeBack(isResolved: false);
+    _conversationService.setResolved(conversationId: thread.conversationId, resolved: false);
   }
 
-  void _writeBack({int? unreadCount, bool? isResolved, String? lastMessagePreview, String? timeLabel}) {
-    if (!Get.isRegistered<InboxController>()) return;
-    final inbox = Get.find<InboxController>();
-    final updated = _originalThread.copyWith(
-      unreadCount: unreadCount,
-      isResolved: isResolved,
-      messages: List.of(messages),
-      lastMessagePreview: lastMessagePreview,
-      timeLabel: timeLabel,
-    );
-    inbox.updateThread(_originalThread, updated);
-    _originalThread = updated;
+  static String _formatTime(DateTime? at) {
+    if (at == null) return 'Now';
+    final hour = at.hour % 12 == 0 ? 12 : at.hour % 12;
+    final minute = at.minute.toString().padLeft(2, '0');
+    final period = at.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
   }
 
   @override
   void onClose() {
+    _messagesSub?.cancel();
+    _metaSub?.cancel();
     textController.dispose();
     super.onClose();
   }

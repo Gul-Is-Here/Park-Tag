@@ -40,12 +40,25 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Keeps the Flutter engine from also trying to parse an incoming deep
+	     link into an initial route on its own — this app decides routing
+	     itself (app_links + SplashController), not Navigator 2.0/go_router. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>ParkTag needs camera access to scan your RC card and photograph your vehicle.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ParkTag needs photo library access to add photos of your vehicle.</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<!-- Lets FCM chat-message pushes (FR-05/FR-06) wake the app to
+		     process a data-only payload while backgrounded. -->
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -83,7 +83,7 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  controller.scannerName,
+                  controller.counterpartName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.fieldValue.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700),
@@ -172,7 +172,7 @@ class _InputBar extends StatelessWidget {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isCollapsed: true,
-                  hintText: 'Message ${controller.scannerName}...',
+                  hintText: 'Message ${controller.counterpartName}...',
                   hintStyle: AppTextStyles.manropeBase.copyWith(color: AppColors.faint, fontSize: 13.5),
                 ),
                 onSubmitted: (_) => controller.sendText(),

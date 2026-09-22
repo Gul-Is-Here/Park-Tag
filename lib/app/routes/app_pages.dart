@@ -5,14 +5,20 @@ import '../../modules/auth/views/login_view.dart';
 import '../../modules/auth/views/signup_view.dart';
 import '../../modules/chat/bindings/chat_thread_binding.dart';
 import '../../modules/chat/views/chat_thread_view.dart';
+import '../../modules/comm_preference/bindings/comm_preference_binding.dart';
+import '../../modules/comm_preference/views/comm_preference_view.dart';
 import '../../modules/dashboard/bindings/dashboard_binding.dart';
 import '../../modules/dashboard/views/dashboard_view.dart';
 import '../../modules/home/bindings/home_binding.dart';
 import '../../modules/home/views/home_view.dart';
 import '../../modules/onboarding/bindings/onboarding_binding.dart';
 import '../../modules/onboarding/views/onboarding_view.dart';
+import '../../modules/qr_scanner/bindings/qr_scanner_binding.dart';
+import '../../modules/qr_scanner/views/qr_scanner_view.dart';
 import '../../modules/otp/bindings/otp_binding.dart';
 import '../../modules/otp/views/otp_view.dart';
+import '../../modules/scan/bindings/scan_contact_binding.dart';
+import '../../modules/scan/views/scan_contact_view.dart';
 import '../../modules/splash/bindings/splash_binding.dart';
 import '../../modules/splash/views/splash_view.dart';
 import '../../modules/vehicle/bindings/review_vehicle_binding.dart';
@@ -60,6 +66,11 @@ class AppPages {
       binding: OtpBinding(),
     ),
     GetPage(
+      name: AppRoutes.commPreference,
+      page: () => const CommPreferenceView(),
+      binding: CommPreferenceBinding(),
+    ),
+    GetPage(
       name: AppRoutes.dashboard,
       page: () => const DashboardView(),
       binding: DashboardBinding(),
@@ -88,6 +99,16 @@ class AppPages {
       name: AppRoutes.chatThread,
       page: () => const ChatThreadView(),
       binding: ChatThreadBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.qrScanner,
+      page: () => const QrScannerView(),
+      binding: QrScannerBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.scanContact,
+      page: () => const ScanContactView(),
+      binding: ScanContactBinding(),
     ),
   ];
 }
