@@ -15,13 +15,12 @@ final vehicleIdentifierFormatter = FilteringTextInputFormatter.allow(
 /// Characters allowed in the vehicle's name-like fields — make, model,
 /// address, nickname.
 ///
-/// No hyphen here, unlike [vehicleIdentifierFormatter]: letters and digits
-/// only, plus spaces. Digits stay allowed because blocking them would make
-/// an address unable to hold a house number ("123 Model Town") and a model
-/// unable to hold e.g. "Corolla 2.0" — only the hyphen and other symbols
-/// are rejected, as typed or pasted.
+/// Letters, digits, spaces and the hyphen — the hyphen is needed for
+/// addresses like "123-B Model Town" and matches what's already allowed
+/// in [vehicleIdentifierFormatter]. Only other punctuation/symbols are
+/// rejected, as typed or pasted.
 final vehicleNameFormatter = FilteringTextInputFormatter.allow(
-  RegExp(r'[A-Za-z0-9 ]'),
+  RegExp(r'[A-Za-z0-9\- ]'),
 );
 
 const _months = [

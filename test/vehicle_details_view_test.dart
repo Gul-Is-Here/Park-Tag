@@ -32,7 +32,9 @@ void main() {
 
   setUp(() {
     Get.reset();
-    Get.put<AuthService>(FakeAuthService());
+    final fakeAuth = FakeAuthService();
+    fakeAuth.signInAs(uid: 'resident-1', phone: '+923001234567');
+    Get.put<AuthService>(fakeAuth);
     Get.put<VehicleService>(FakeVehicleService());
   });
 
@@ -50,9 +52,50 @@ void main() {
     expect(find.text('123-B, Model Town, Lahore'), findsOneWidget);
   });
 
-  testWidgets('Confirming the remove dialog deletes the vehicle from the Home tab list', (tester) async {
+  testWidgets(
+    'Confirming the remove dialog deletes the vehicle from the backend and the Home tab list',
+    (tester) async {
+      final fakeVehicles = Get.find<VehicleService>() as FakeVehicleService;
+      Get.put(HomeTabController());
+      final home = Get.find<HomeTabController>();
+      // HomeTabController subscribes to watchVehicles on init — let that
+      // first (empty, since nothing was saved through the service here)
+      // emission settle before seeding the list by hand, or it overwrites
+      // this assignAll right back to empty.
+      await tester.pump();
+      home.vehicles.assignAll([_vehicle]);
+
+      Get.put(VehicleDetailsController(vehicle: _vehicle));
+
+      await tester.pumpWidget(const GetMaterialApp(home: VehicleDetailsView()));
+      await tester.pump();
+
+      await tester.ensureVisible(find.text('Remove Vehicle'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove Vehicle'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Remove'));
+      // The dialog itself awaits the delete before popping — pump past
+      // that async gap rather than assuming it's instant.
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 4));
+
+      expect(fakeVehicles.deletedIds, contains(_vehicle.id));
+      expect(home.vehicles.contains(_vehicle), isFalse);
+    },
+  );
+
+  testWidgets('A failed delete keeps the dialog open with an error, and does not remove the vehicle', (
+    tester,
+  ) async {
+    final fakeVehicles = Get.find<VehicleService>() as FakeVehicleService;
+    fakeVehicles.throwOnDelete = true;
+
     Get.put(HomeTabController());
     final home = Get.find<HomeTabController>();
+    await tester.pump();
     home.vehicles.assignAll([_vehicle]);
 
     Get.put(VehicleDetailsController(vehicle: _vehicle));
@@ -67,8 +110,9 @@ void main() {
 
     await tester.tap(find.text('Remove'));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump();
 
-    expect(home.vehicles.contains(_vehicle), isFalse);
+    expect(find.text("Couldn't remove the vehicle. Please try again."), findsOneWidget);
+    expect(home.vehicles.contains(_vehicle), isTrue);
   });
 }

@@ -155,12 +155,10 @@ void main() {
     expect(filter('AB/CD*12'), 'ABCD12');
   });
 
-  test('Name-like fields (make, model, address, nickname) reject the hyphen too', () {
-    // Unlike vehicleIdentifierFormatter, these are name/description fields
-    // with no fixed real-world format requiring a hyphen, so it is
-    // rejected along with every other special character. Digits still
-    // pass — an address needs a house number and a model can be "Corolla
-    // 2.0" — only letters, digits and spaces survive.
+  test('Name-like fields (make, model, address, nickname) keep the hyphen, reject other symbols', () {
+    // Same allowed set as vehicleIdentifierFormatter: letters, digits,
+    // spaces and the hyphen (addresses like "123-B Model Town" need it) —
+    // only other punctuation/symbols are rejected.
     String filter(String input) => vehicleNameFormatter
         .formatEditUpdate(TextEditingValue.empty, TextEditingValue(text: input))
         .text;
@@ -169,7 +167,7 @@ void main() {
     expect(filter('Corolla Altis'), 'Corolla Altis');
     expect(filter('123 B Model Town Lahore'), '123 B Model Town Lahore');
     expect(filter('White Corolla'), 'White Corolla');
-    expect(filter('123-B, Model Town, Lahore'), '123B Model Town Lahore');
+    expect(filter('123-B, Model Town, Lahore'), '123-B Model Town Lahore');
     expect(filter(r'Toyota@#!'), 'Toyota');
   });
 

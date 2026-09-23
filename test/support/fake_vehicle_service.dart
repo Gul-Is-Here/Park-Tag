@@ -4,8 +4,12 @@ import 'package:parktag_app/app/services/vehicle_service.dart';
 
 class FakeVehicleService implements VehicleService {
   final List<Map<String, dynamic>> saved = [];
+  final List<String> deletedIds = [];
   final _vehiclesController = StreamController<List<Map<String, dynamic>>>.broadcast();
   int _idSeq = 0;
+
+  /// Set to force [deleteVehicle] to throw, to simulate a failed delete.
+  bool throwOnDelete = false;
 
   @override
   Future<String> saveVehicle({
@@ -21,6 +25,8 @@ class FakeVehicleService implements VehicleService {
     required String chassisNumber,
     required String address,
     required List<String> localPhotoPaths,
+    String? rcCardFrontImagePath,
+    String? rcCardBackImagePath,
   }) async {
     final id = 'fake-vehicle-${_idSeq++}';
     saved.add({
@@ -37,9 +43,21 @@ class FakeVehicleService implements VehicleService {
       'chassisNumber': chassisNumber,
       'address': address,
       'photoPaths': localPhotoPaths,
+      'rcCardFrontImagePath': rcCardFrontImagePath,
+      'rcCardBackImagePath': rcCardBackImagePath,
     });
     _vehiclesController.add(List.of(saved));
     return id;
+  }
+
+  @override
+  Future<void> deleteVehicle({required String uid, required String vehicleId}) async {
+    if (throwOnDelete) {
+      throw Exception('Simulated delete failure');
+    }
+    deletedIds.add(vehicleId);
+    saved.removeWhere((v) => v['id'] == vehicleId);
+    _vehiclesController.add(List.of(saved));
   }
 
   @override

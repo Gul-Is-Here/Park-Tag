@@ -48,13 +48,19 @@ class ProfileController extends GetxController {
     final uid = _authService.currentUid;
     if (uid != null) {
       final data = await _authService.fetchResidentProfile(uid);
+      // This controller (and its `name` TextEditingController) may have
+      // been disposed while the fetch above was in flight — e.g. the
+      // resident navigated away before their profile finished loading.
+      // Writing to a disposed TextEditingController throws, so bail out
+      // rather than touching it once we're no longer alive.
+      if (isClosed) return;
       if (data != null) {
         name.text = (data['name'] as String?) ?? '';
         cnic.value = (data['cnic'] as String?) ?? '';
       }
     }
 
-    isLoading.value = false;
+    if (!isClosed) isLoading.value = false;
   }
 
   Future<void> save() async {

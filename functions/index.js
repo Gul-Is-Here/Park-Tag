@@ -1,12 +1,18 @@
 const { setGlobalOptions } = require("firebase-functions");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 setGlobalOptions({ maxInstances: 10 });
+
+// Set with: firebase functions:secrets:set OPENAI_API_KEY
+// Never hardcoded here, and never sent to the client — the app only ever
+// calls extractRcCardFields below, which holds the key server-side.
+const openAiApiKey = defineSecret("OPENAI_API_KEY");
 
 initializeApp();
 const db = getFirestore();
@@ -261,3 +267,143 @@ exports.resolveVehicleAndOpenChat = onCall(async (request) => {
     resolved: conversation.resolved || false,
   };
 });
+
+const RC_CARD_FIELD_KEYS = [
+  "make",
+  "makerName",
+  "plateNumber",
+  "color",
+  "dateOfRegistration",
+  "engineNumber",
+  "chassisNumber",
+  "address",
+  "mrzLine1",
+  "mrzLine2",
+  "mrzLine3",
+];
+
+// Structured outputs: OpenAI guarantees the reply matches this schema, so
+// there is no free-form JSON to mis-key. Strict mode requires every key to
+// be listed in `required`; unreadable fields come back as "".
+const RC_CARD_SCHEMA = {
+  name: "rc_card_fields",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: RC_CARD_FIELD_KEYS,
+    properties: Object.fromEntries(RC_CARD_FIELD_KEYS.map((k) => [k, { type: "string" }])),
+  },
+};
+
+const RC_CARD_PROMPT =
+  "You are reading a Punjab Excise & Taxation vehicle registration smart card " +
+  "(front and/or back photo). Copy each value EXACTLY as printed directly " +
+  "BELOW its label. Never infer, reorder or swap values between fields.\n\n" +
+  "Field rules:\n" +
+  '- "make": the value printed directly BELOW the label "Make" (exactly the ' +
+  'word "Make", NOT "Maker Name"). It is the vehicle MODEL, usually with ' +
+  'digits, e.g. "US 70", "CD 70", "CG 125", "YBR 125", "COROLLA GLI".\n' +
+  '- "makerName": the value printed directly BELOW the label "Maker Name". It ' +
+  'is the MANUFACTURER, e.g. "UNITED", "HONDA", "SUZUKI", "YAMAHA", ' +
+  '"ROAD PRINCE", "TOYOTA".\n' +
+  '  On this card "Make" sits directly ABOVE "Maker Name" on the back side. ' +
+  "The two labels are different; do not merge or swap them.\n" +
+  '- "plateNumber": the "Reg No" value, e.g. "ANJ 5947".\n' +
+  '- "color": below "Colour".\n' +
+  '- "dateOfRegistration": below "Date of Reg.", formatted like "14 Sep 2022".\n' +
+  '- "engineNumber": below "Engine No".\n' +
+  '- "chassisNumber": below "Chasis No" / "Chassis No".\n' +
+  '- "address": below "Address".\n' +
+  '- "mrzLine1", "mrzLine2", "mrzLine3": the three machine-readable lines at ' +
+  'the bottom of the back side (full of "<" characters), copied character ' +
+  "for character.\n\n" +
+  'Use "" for any field that is not visible. Return JSON only.';
+
+/**
+ * FR-02.1: reads the RC card's front/back photos with OpenAI's GPT-4o
+ * vision model and returns best-effort structured fields to pre-fill the
+ * Add Vehicle form.
+ *
+ * Runs server-side, not from the client, for one reason: the OpenAI API
+ * key. An API key bundled inside a mobile app can always be extracted from
+ * the installed binary, so it is kept here instead, in Secret Manager
+ * (`openAiApiKey`) — the client only ever sends photos and gets fields
+ * back, never the key itself.
+ */
+exports.extractRcCardFields = onCall(
+  { secrets: [openAiApiKey], timeoutSeconds: 60, memory: "512MiB" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be signed in to scan a card.");
+    }
+
+    const { frontImageBase64, backImageBase64 } = request.data || {};
+    if (!frontImageBase64 && !backImageBase64) {
+      throw new HttpsError("invalid-argument", "At least one image is required.");
+    }
+
+    const imageParts = [frontImageBase64, backImageBase64]
+      .filter((b64) => typeof b64 === "string" && b64.length > 0)
+      .map((b64) => ({
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${b64}`, detail: "high" },
+      }));
+
+    let response;
+    try {
+      response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openAiApiKey.value()}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: [{ type: "text", text: RC_CARD_PROMPT }, ...imageParts],
+            },
+          ],
+          response_format: { type: "json_schema", json_schema: RC_CARD_SCHEMA },
+          max_tokens: 700,
+          temperature: 0,
+        }),
+      });
+    } catch (err) {
+      logger.error(`extractRcCardFields: OpenAI request failed: ${err}`);
+      throw new HttpsError("unavailable", "Could not reach the scanning service. Please try again.");
+    }
+
+    if (!response.ok) {
+      const errText = await response.text();
+      logger.error(`extractRcCardFields: OpenAI returned ${response.status}: ${errText}`);
+      throw new HttpsError("internal", "Could not read the card. Please try again.");
+    }
+
+    const payload = await response.json();
+    const content = payload.choices?.[0]?.message?.content;
+    if (!content) {
+      logger.error("extractRcCardFields: no content in OpenAI response.");
+      throw new HttpsError("internal", "Could not read the card. Please try again.");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (err) {
+      logger.error(`extractRcCardFields: could not parse OpenAI JSON: ${content}`);
+      throw new HttpsError("internal", "Could not read the card. Please try again.");
+    }
+
+    const result = {};
+    for (const key of RC_CARD_FIELD_KEYS) {
+      const value = parsed[key];
+      result[key] = typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+    }
+
+    logger.info(`extractRcCardFields: extracted fields for uid ${request.auth.uid}.`);
+    return result;
+  }
+);

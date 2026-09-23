@@ -42,7 +42,10 @@ class VehicleFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = AppTextStyles.label.copyWith(color: AppColors.muted, letterSpacing: 0.4);
+    final labelStyle = AppTextStyles.label.copyWith(
+      color: AppColors.muted,
+      letterSpacing: 0.4,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,27 +95,39 @@ class VehicleFormField extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: hint,
                   suffixIcon: suffixIcon,
-                  hintStyle: AppTextStyles.manropeBase.copyWith(color: AppColors.faint),
+                  hintStyle: AppTextStyles.manropeBase.copyWith(
+                    color: AppColors.faint,
+                  ),
                   filled: true,
                   fillColor: AppColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: emphasize ? AppColors.yellow : const Color(0xFF33332E),
+                      color: emphasize
+                          ? AppColors.yellow
+                          : const Color(0xFF33332E),
                       width: 1.5,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: emphasize ? AppColors.yellow : const Color(0xFF33332E),
+                      color: emphasize
+                          ? AppColors.yellow
+                          : const Color(0xFF33332E),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.yellow, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppColors.yellow,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),

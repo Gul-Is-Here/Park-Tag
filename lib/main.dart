@@ -58,7 +58,7 @@ void main() async {
   Get.put<OnboardingService>(SharedPrefsOnboardingService(), permanent: true);
   Get.put<VehicleService>(FirebaseVehicleService(), permanent: true);
   Get.put<ConversationService>(FirebaseConversationService(), permanent: true);
-  Get.put<RcOcrService>(MlKitRcOcrService(), permanent: true);
+  Get.put<RcOcrService>(OpenAiRcOcrService(), permanent: true);
   final pushService = Get.put<PushNotificationService>(
     FirebasePushNotificationService(),
     permanent: true,

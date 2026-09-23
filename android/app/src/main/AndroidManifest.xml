@@ -5,7 +5,7 @@
          requestPermission() call handles the runtime prompt. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="parktag_app"
+        android:label="Park Tag"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

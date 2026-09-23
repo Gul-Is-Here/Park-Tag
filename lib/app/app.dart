@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'ParkTag',
+      title: 'Park Tag',
       theme: AppTheme.light,
       initialRoute: AppPages.initial,
       getPages: AppPages.routes,

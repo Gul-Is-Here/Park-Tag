@@ -41,7 +41,7 @@ void main() {
   testWidgets('Registration, engine and chassis number fields reject special characters', (
     tester,
   ) async {
-    Get.put(ReviewVehicleController(rcCardPath: null));
+    Get.put(ReviewVehicleController(frontImagePath: null, backImagePath: null));
 
     await tester.pumpWidget(const GetMaterialApp(home: ReviewVehicleView()));
     await tester.pump();
@@ -56,23 +56,22 @@ void main() {
     }
   });
 
-  testWidgets('Make, model, address and nickname fields reject the hyphen too', (tester) async {
-    Get.put(ReviewVehicleController(rcCardPath: null));
+  testWidgets('Make, model and address fields filter special characters', (tester) async {
+    Get.put(ReviewVehicleController(frontImagePath: null, backImagePath: null));
 
     await tester.pumpWidget(const GetMaterialApp(home: ReviewVehicleView()));
     await tester.pump();
 
     for (final hint in [
-      'Toyota',
-      'Corolla Altis',
+      'US 70',
+      'UNITED',
       '123 B Model Town Lahore',
-      'e.g. White Corolla',
     ]) {
       final field = await fieldWithHint(tester, hint);
       expect(
         field.inputFormatters,
         contains(vehicleNameFormatter),
-        reason: '"$hint" field must filter the hyphen and other special characters',
+        reason: '"$hint" field must filter non-alphanumeric special characters',
       );
     }
   });

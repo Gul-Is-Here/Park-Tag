@@ -66,16 +66,16 @@ class EditVehicleView extends GetView<EditVehicleController> {
                     child: VehicleFormField(
                       label: 'Make',
                       controller: controller.make,
-                      hint: 'Toyota',
+                      hint: 'US 70',
                       inputFormatters: [vehicleNameFormatter],
                     ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: VehicleFormField(
-                      label: 'Model',
+                      label: 'Maker Name',
                       controller: controller.model,
-                      hint: 'Corolla Altis',
+                      hint: 'UNITED',
                       inputFormatters: [vehicleNameFormatter],
                     ),
                   ),

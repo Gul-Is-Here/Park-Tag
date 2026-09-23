@@ -9,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../app/services/auth_service.dart';
+import '../../../app/services/vehicle_service.dart';
 import '../../dashboard/controllers/home_tab_controller.dart';
 import '../../dashboard/models/vehicle_model.dart';
 import '../widgets/remove_vehicle_dialog.dart';
@@ -19,6 +21,9 @@ class VehicleDetailsController extends GetxController {
 
   final Rx<VehicleModel> _vehicle;
   VehicleModel get vehicle => _vehicle.value;
+
+  final _authService = Get.find<AuthService>();
+  final _vehicleService = Get.find<VehicleService>();
 
   /// Wraps the QR card so [shareQrCode] can capture it as an image.
   final qrBoundaryKey = GlobalKey();
@@ -36,7 +41,17 @@ class VehicleDetailsController extends GetxController {
 
   Future<void> removeVehicle() async {
     final confirmed = await Get.dialog<bool>(
-      RemoveVehicleDialog(nickname: vehicle.nickname),
+      RemoveVehicleDialog(
+        nickname: vehicle.nickname,
+        onConfirm: () async {
+          final uid = _authService.currentUid;
+          if (uid == null) {
+            throw StateError('Not signed in');
+          }
+          await _vehicleService.deleteVehicle(uid: uid, vehicleId: vehicle.id);
+        },
+      ),
+      barrierDismissible: false,
     );
     if (confirmed != true) return;
 

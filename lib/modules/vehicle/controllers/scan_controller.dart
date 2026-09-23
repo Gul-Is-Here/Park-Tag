@@ -7,13 +7,15 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../app/routes/app_routes.dart';
 
+enum RcCardSide { front, back }
+
 /// Drives the OCR/RC-card scanner — opened ONLY from the "Add Vehicle"
 /// button. Delegates the whole capture step to ML Kit's Document Scanner,
 /// which runs as Google Play services' own fullscreen flow: automatic
 /// document detection, edge-accurate cropping, rotation correction and
 /// shadow/stain removal, then hands back a cropped JPEG. ML Kit text
-/// recognition runs afterwards, in [ReviewVehicleController], on that
-/// cropped image.
+/// recognition runs afterwards, in [ReviewVehicleController], on the
+/// cropped front and back images together.
 ///
 /// Android-only by nature — the plugin's iOS side is a stub, so on iOS
 /// this screen offers the gallery/manual-entry fallbacks instead (see
@@ -25,24 +27,46 @@ import '../../../app/routes/app_routes.dart';
 class ScanController extends GetxController {
   final _picker = ImagePicker();
 
-  /// True while Google's scanner flow is being launched/running.
+  /// True while the choice screen (scan card / enter manually) is showing,
+  /// before the resident has picked either option.
+  final isChoosing = true.obs;
+
+  /// True while Google's scanner flow is being launched/running for
+  /// whichever side is being captured.
   final isLaunching = false.obs;
 
   /// True when there's no document scanner on this platform (iOS) — the
-  /// screen then shows gallery import and manual entry instead.
+  /// capture screen then falls back to gallery import for both sides.
   final isScannerUnavailable = false.obs;
 
   final errorMessage = RxnString();
 
+  /// RC card front/back photos — an ID-card-style two-box capture, the
+  /// same idea as scanning the front and back of a CNIC.
+  final frontImagePath = RxnString();
+  final backImagePath = RxnString();
+
+  bool get hasBothSides =>
+      frontImagePath.value != null && backImagePath.value != null;
+
   @override
-  void onReady() {
-    super.onReady();
-    // Launched from onReady rather than onInit so the route transition has
-    // settled before Google's activity takes over the screen.
-    launchScanner();
+  void onInit() {
+    super.onInit();
+    // iOS never has the scanner, so the choice/capture screens can say so
+    // up front rather than waiting for a tap that will just fail.
+    if (!Platform.isAndroid) {
+      isScannerUnavailable.value = true;
+    }
   }
 
-  Future<void> launchScanner() async {
+  /// Moves from the initial choice screen into the front/back capture
+  /// screen — the scanner itself only launches once a specific side (front
+  /// or back) is tapped there.
+  void startScanning() {
+    isChoosing.value = false;
+  }
+
+  Future<void> scanSide(RcCardSide side) async {
     if (!Platform.isAndroid) {
       isScannerUnavailable.value = true;
       return;
@@ -66,43 +90,81 @@ class ScanController extends GetxController {
 
     try {
       final result = await scanner.scanDocument();
-      final path = result.images?.isNotEmpty ?? false ? result.images!.first : null;
+      final path = result.images?.isNotEmpty ?? false
+          ? result.images!.first
+          : null;
       if (path == null) {
-        errorMessage.value = "That scan didn't produce an image. Please try again.";
+        errorMessage.value =
+            "That scan didn't produce an image. Please try again.";
         return;
       }
-      // offNamed, not toNamed: this screen is just a launcher, so Back from
-      // the Review screen should return to the dashboard rather than
-      // re-triggering the scanner.
-      Get.offNamed(AppRoutes.addVehicleReview, arguments: {'rcCardPath': path});
+      _setPath(side, path);
     } on PlatformException catch (e) {
       // The plugin reports a user cancel as an error, so it has to be told
       // apart from a real failure — backing out of the scanner should just
-      // return to the dashboard, not show an error.
+      // return to the capture screen, not show an error.
       if ((e.message ?? '').toLowerCase().contains('cancel')) {
-        Get.back();
         return;
       }
-      errorMessage.value = "Couldn't open the scanner. Please try again, or enter the details manually.";
+      errorMessage.value = "Couldn't open the scanner. Please try again.";
     } on MissingPluginException {
       isScannerUnavailable.value = true;
     } catch (_) {
-      errorMessage.value = "Something went wrong while scanning. Please try again.";
+      errorMessage.value =
+          "Something went wrong while scanning. Please try again.";
     } finally {
       isLaunching.value = false;
       await scanner.close();
     }
   }
 
-  /// Gallery fallback — the same OCR pipeline, just sourced from an
-  /// existing photo. The resident is never trapped behind the scanner.
-  Future<void> pickFromGallery() async {
-    final photo = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+  /// Gallery fallback for a single side — used directly on iOS (no
+  /// scanner at all), and as a manual retake option on Android.
+  Future<void> pickSideFromGallery(RcCardSide side) async {
+    final photo = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
     if (photo == null) return;
-    Get.offNamed(AppRoutes.addVehicleReview, arguments: {'rcCardPath': photo.path});
+    _setPath(side, photo.path);
+  }
+
+  void removeSide(RcCardSide side) {
+    if (side == RcCardSide.front) {
+      frontImagePath.value = null;
+    } else {
+      backImagePath.value = null;
+    }
+  }
+
+  void _setPath(RcCardSide side, String path) {
+    if (side == RcCardSide.front) {
+      frontImagePath.value = path;
+    } else {
+      backImagePath.value = path;
+    }
+  }
+
+  /// Both sides captured — hand them both to Review, which OCRs each and
+  /// merges the recognized text to fill the form.
+  void next() {
+    if (!hasBothSides) return;
+    // offNamed, not toNamed: this screen is just a launcher, so Back from
+    // the Review screen should return to the dashboard rather than
+    // re-triggering the capture flow.
+    Get.offNamed(
+      AppRoutes.addVehicleReview,
+      arguments: {
+        'frontImagePath': frontImagePath.value,
+        'backImagePath': backImagePath.value,
+      },
+    );
   }
 
   void enterManually() {
-    Get.offNamed(AppRoutes.addVehicleReview, arguments: const {'rcCardPath': null});
+    Get.offNamed(
+      AppRoutes.addVehicleReview,
+      arguments: const {'frontImagePath': null, 'backImagePath': null},
+    );
   }
 }

@@ -7,7 +7,10 @@ class ReviewVehicleBinding extends Bindings {
   void dependencies() {
     final args = Get.arguments as Map?;
     Get.put<ReviewVehicleController>(
-      ReviewVehicleController(rcCardPath: args?['rcCardPath'] as String?),
+      ReviewVehicleController(
+        frontImagePath: args?['frontImagePath'] as String?,
+        backImagePath: args?['backImagePath'] as String?,
+      ),
     );
   }
 }

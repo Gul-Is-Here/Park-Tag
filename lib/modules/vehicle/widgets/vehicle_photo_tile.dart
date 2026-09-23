@@ -12,6 +12,8 @@ class VehiclePhotoTile extends StatelessWidget {
     this.imagePath,
     required this.onTap,
     this.onRemove,
+    this.aspectRatio = 1,
+    this.borderRadius = 14,
   });
 
   final String label;
@@ -19,12 +21,19 @@ class VehiclePhotoTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onRemove;
 
+  /// Width/height ratio of the tile — e.g. 1.586 for an ID-card (CR80)
+  /// shaped box like an RC card or CNIC.
+  final double aspectRatio;
+
+  /// Corner radius in logical pixels.
+  final double borderRadius;
+
   @override
   Widget build(BuildContext context) {
     final hasPhoto = imagePath != null;
 
     return AspectRatio(
-      aspectRatio: 1,
+      aspectRatio: aspectRatio,
       child: GestureDetector(
         onTap: hasPhoto ? null : onTap,
         child: Stack(
@@ -33,7 +42,7 @@ class VehiclePhotoTile extends StatelessWidget {
             DecoratedBox(
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(color: AppColors.yellow, width: 1.5),
                 image: hasPhoto
                     ? DecorationImage(
@@ -49,7 +58,11 @@ class VehiclePhotoTile extends StatelessWidget {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_a_photo_outlined, color: AppColors.yellow, size: 24),
+                        const Icon(
+                          Icons.add_a_photo_outlined,
+                          color: AppColors.yellow,
+                          size: 24,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           label,
@@ -74,7 +87,11 @@ class VehiclePhotoTile extends StatelessWidget {
                       color: Colors.black.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, color: AppColors.ink, size: 14),
+                    child: const Icon(
+                      Icons.close,
+                      color: AppColors.ink,
+                      size: 14,
+                    ),
                   ),
                 ),
               ),

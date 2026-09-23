@@ -40,7 +40,10 @@ RcDetectionResult evaluateRcCardFrame({
   required Rect guideRect,
 }) {
   if (textBlockRects.isEmpty) {
-    return const RcDetectionResult(state: RcDetectionState.searching, cardRect: null);
+    return const RcDetectionResult(
+      state: RcDetectionState.searching,
+      cardRect: null,
+    );
   }
 
   // Merge every text block's box into one cluster — a card/plate is a
@@ -50,7 +53,10 @@ RcDetectionResult evaluateRcCardFrame({
     union = union == null ? box : union.expandToInclude(box);
   }
   if (union == null || union.width <= 0 || union.height <= 0) {
-    return const RcDetectionResult(state: RcDetectionState.searching, cardRect: null);
+    return const RcDetectionResult(
+      state: RcDetectionState.searching,
+      cardRect: null,
+    );
   }
 
   final cardRect = union;
@@ -59,29 +65,49 @@ RcDetectionResult evaluateRcCardFrame({
   // A card/plate is a wide rectangle; a near-square or very thin sliver of
   // text (e.g. one stray line) isn't the whole document — treat as tilted
   // only once it's already roughly guide-sized, otherwise keep searching.
-  final coverageOfGuide = _intersectionArea(cardRect, guideRect) / guideRect.width / guideRect.height;
+  final coverageOfGuide =
+      _intersectionArea(cardRect, guideRect) /
+      guideRect.width /
+      guideRect.height;
 
   if (coverageOfGuide < 0.05) {
-    return RcDetectionResult(state: RcDetectionState.outsideFrame, cardRect: cardRect);
+    return RcDetectionResult(
+      state: RcDetectionState.outsideFrame,
+      cardRect: cardRect,
+    );
   }
 
-  final containsCard = guideRect.contains(Offset(cardRect.left, cardRect.top)) &&
+  final containsCard =
+      guideRect.contains(Offset(cardRect.left, cardRect.top)) &&
       guideRect.contains(Offset(cardRect.right, cardRect.bottom));
 
   if (!containsCard && coverageOfGuide < 0.6) {
-    return RcDetectionResult(state: RcDetectionState.partiallyOutside, cardRect: cardRect);
+    return RcDetectionResult(
+      state: RcDetectionState.partiallyOutside,
+      cardRect: cardRect,
+    );
   }
 
   if (aspectRatio < 1.1 || aspectRatio > 3.4) {
-    return RcDetectionResult(state: RcDetectionState.tilted, cardRect: cardRect);
+    return RcDetectionResult(
+      state: RcDetectionState.tilted,
+      cardRect: cardRect,
+    );
   }
 
-  final sizeRatio = (cardRect.width * cardRect.height) / (guideRect.width * guideRect.height);
+  final sizeRatio =
+      (cardRect.width * cardRect.height) / (guideRect.width * guideRect.height);
   if (sizeRatio < 0.28) {
-    return RcDetectionResult(state: RcDetectionState.tooFar, cardRect: cardRect);
+    return RcDetectionResult(
+      state: RcDetectionState.tooFar,
+      cardRect: cardRect,
+    );
   }
   if (sizeRatio > 1.35) {
-    return RcDetectionResult(state: RcDetectionState.tooClose, cardRect: cardRect);
+    return RcDetectionResult(
+      state: RcDetectionState.tooClose,
+      cardRect: cardRect,
+    );
   }
 
   return RcDetectionResult(state: RcDetectionState.fitting, cardRect: cardRect);
@@ -110,7 +136,10 @@ class RcCardTracker {
     if (frame.state == RcDetectionState.fitting) {
       _stableCount++;
       if (_stableCount >= requiredStableFrames) {
-        return RcDetectionResult(state: RcDetectionState.ready, cardRect: frame.cardRect);
+        return RcDetectionResult(
+          state: RcDetectionState.ready,
+          cardRect: frame.cardRect,
+        );
       }
       return frame;
     }

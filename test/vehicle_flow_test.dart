@@ -41,25 +41,25 @@ void main() {
   });
 
   testWidgets('Scan handoff pre-fills fields from the OCR result', (tester) async {
-    final controller = Get.put(ReviewVehicleController(rcCardPath: '/tmp/rc.jpg'));
+    final controller = Get.put(ReviewVehicleController(frontImagePath: '/tmp/rc.jpg', backImagePath: '/tmp/rc-back.jpg'));
     // OCR now runs asynchronously (a real on-device recognizer call in
     // production) — let that microtask resolve before asserting.
     await tester.pump();
 
-    expect(controller.make.text, 'Toyota');
-    expect(controller.model.text, 'Corolla Altis');
+    expect(controller.make.text, 'Corolla Altis');
+    expect(controller.model.text, 'Toyota');
     expect(controller.plateNumber.text, 'LEA-2231');
   });
 
   testWidgets('Manual entry starts with empty fields', (tester) async {
-    final controller = Get.put(ReviewVehicleController(rcCardPath: null));
+    final controller = Get.put(ReviewVehicleController(frontImagePath: null, backImagePath: null));
 
     expect(controller.make.text, isEmpty);
     expect(controller.plateNumber.text, isEmpty);
   });
 
   testWidgets('Save is blocked until 2 vehicle photos are added', (tester) async {
-    final controller = Get.put(ReviewVehicleController(rcCardPath: '/tmp/rc.jpg'));
+    final controller = Get.put(ReviewVehicleController(frontImagePath: '/tmp/rc.jpg', backImagePath: '/tmp/rc-back.jpg'));
     await tester.pump();
 
     expect(controller.canSave, isFalse);
@@ -77,9 +77,11 @@ void main() {
     final home = Get.find<HomeTabController>();
     final startingCount = home.vehicles.length;
 
-    final controller = Get.put(ReviewVehicleController(rcCardPath: '/tmp/rc.jpg'));
+    final controller = Get.put(ReviewVehicleController(frontImagePath: '/tmp/rc.jpg', backImagePath: '/tmp/rc-back.jpg'));
     controller.vehiclePhotos.addAll([XFile('/tmp/one.jpg'), XFile('/tmp/two.jpg')]);
-    controller.nickname.text = 'Test Car';
+    // OCR runs on init (both paths are set above) and fills plateNumber
+    // from the fake card text — let that resolve before saving.
+    await tester.pump();
 
     await tester.pumpWidget(
       GetMaterialApp(
@@ -97,17 +99,19 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
 
     expect(fakeVehicles.saved, hasLength(1));
-    expect(fakeVehicles.saved.single['nickname'], 'Test Car');
+    // No nickname field on Review anymore (aligned with Edit Vehicle) —
+    // it falls back to the plate number, same as Edit's save() does.
+    expect(fakeVehicles.saved.single['nickname'], 'LEA-2231');
     expect(fakeVehicles.saved.single['uid'], 'resident-1');
 
     expect(home.vehicles.length, startingCount + 1);
-    expect(home.vehicles.last.nickname, 'Test Car');
+    expect(home.vehicles.last.nickname, 'LEA-2231');
     expect(home.vehicles.last.plateNumber, 'LEA-2231');
     expect(home.vehicles.last.id, fakeVehicles.saved.single['id']);
   });
 
   testWidgets('Review screen renders form fields and the photo section', (tester) async {
-    Get.put(ReviewVehicleController(rcCardPath: null));
+    Get.put(ReviewVehicleController(frontImagePath: null, backImagePath: null));
 
     await tester.pumpWidget(const GetMaterialApp(home: ReviewVehicleView()));
     await tester.pump();

@@ -24,7 +24,16 @@ abstract class VehicleService {
     required String chassisNumber,
     required String address,
     required List<String> localPhotoPaths,
+    String? rcCardFrontImagePath,
+    String? rcCardBackImagePath,
   });
+
+  /// Deletes the vehicle document (both the private `users/{uid}/vehicles`
+  /// copy and the public `vehicles` one the QR sticker points at) along
+  /// with its uploaded photos and RC card scans. Storage deletes are
+  /// best-effort — a folder that was never populated (or a partial
+  /// failure) never blocks removing the record itself.
+  Future<void> deleteVehicle({required String uid, required String vehicleId});
 
   /// Looks up the public-safe fields for a vehicle by its QR-scan id —
   /// backs the public Scan Contact Page, which anyone can open without
@@ -56,6 +65,8 @@ class FirebaseVehicleService implements VehicleService {
     required String chassisNumber,
     required String address,
     required List<String> localPhotoPaths,
+    String? rcCardFrontImagePath,
+    String? rcCardBackImagePath,
   }) async {
     final doc = _firestore.collection('users').doc(uid).collection('vehicles').doc();
 
@@ -64,6 +75,21 @@ class FirebaseVehicleService implements VehicleService {
       final ref = _storage.ref('vehicle_photos/$uid/${doc.id}/$i.jpg');
       await ref.putFile(File(localPhotoPaths[i]));
       photoUrls.add(await ref.getDownloadURL());
+    }
+
+    // The scanned RC card itself — kept as the source record behind the
+    // fields GPT-4o extracted, separate from the vehicle's own photos.
+    String? rcCardFrontUrl;
+    if (rcCardFrontImagePath != null) {
+      final ref = _storage.ref('rc_cards/$uid/${doc.id}/front.jpg');
+      await ref.putFile(File(rcCardFrontImagePath));
+      rcCardFrontUrl = await ref.getDownloadURL();
+    }
+    String? rcCardBackUrl;
+    if (rcCardBackImagePath != null) {
+      final ref = _storage.ref('rc_cards/$uid/${doc.id}/back.jpg');
+      await ref.putFile(File(rcCardBackImagePath));
+      rcCardBackUrl = await ref.getDownloadURL();
     }
 
     await doc.set({
@@ -77,6 +103,8 @@ class FirebaseVehicleService implements VehicleService {
       'chassisNumber': chassisNumber,
       'address': address,
       'photoUrls': photoUrls,
+      'rcCardFrontUrl': rcCardFrontUrl,
+      'rcCardBackUrl': rcCardBackUrl,
       'createdAt': FieldValue.serverTimestamp(),
     });
 
@@ -92,6 +120,27 @@ class FirebaseVehicleService implements VehicleService {
     });
 
     return doc.id;
+  }
+
+  @override
+  Future<void> deleteVehicle({required String uid, required String vehicleId}) async {
+    Future<void> deleteFolder(String path) async {
+      try {
+        final listing = await _storage.ref(path).listAll();
+        await Future.wait(listing.items.map((ref) => ref.delete()));
+      } catch (_) {
+        // Best-effort: a folder nothing was ever uploaded to, or a
+        // partial delete, should never block removing the record itself.
+      }
+    }
+
+    await Future.wait([
+      deleteFolder('vehicle_photos/$uid/$vehicleId'),
+      deleteFolder('rc_cards/$uid/$vehicleId'),
+    ]);
+
+    await _firestore.collection('vehicles').doc(vehicleId).delete();
+    await _firestore.collection('users').doc(uid).collection('vehicles').doc(vehicleId).delete();
   }
 
   @override

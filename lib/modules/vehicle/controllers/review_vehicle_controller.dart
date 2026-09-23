@@ -6,17 +6,24 @@ import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
 import '../../../app/services/rc_ocr_service.dart';
 import '../../../app/services/vehicle_service.dart';
-import '../utils/rc_card_parser.dart';
+import '../../../app/utils/vehicle_input.dart';
+import '../utils/card_validator.dart';
 import '../../../app/widgets/app_snackbar.dart';
 
 class ReviewVehicleController extends GetxController {
-  ReviewVehicleController({required this.rcCardPath});
+  ReviewVehicleController({
+    required this.frontImagePath,
+    required this.backImagePath,
+  });
 
   static const requiredVehiclePhotos = 2;
 
-  /// Path to the captured RC card photo, or null when the resident chose
-  /// "Enter details manually" instead of scanning.
-  final String? rcCardPath;
+  /// Paths to the captured RC card's front/back photos, or both null when
+  /// the resident chose "Enter details manually" instead of scanning.
+  final String? frontImagePath;
+  final String? backImagePath;
+
+  bool get hasScannedCard => frontImagePath != null || backImagePath != null;
 
   final make = TextEditingController();
   final model = TextEditingController();
@@ -26,7 +33,6 @@ class ReviewVehicleController extends GetxController {
   final engineNumber = TextEditingController();
   final chassisNumber = TextEditingController();
   final address = TextEditingController();
-  final nickname = TextEditingController();
 
   final vehiclePhotos = <XFile>[].obs;
   final isSaving = false.obs;
@@ -37,6 +43,12 @@ class ReviewVehicleController extends GetxController {
   /// screen, separate from just leaving fields editable for manual entry.
   final ocrFailed = false.obs;
 
+  /// [CardField] keys the scan validator couldn't confirm — the Review
+  /// screen marks these for the resident to double-check.
+  final lowConfidenceFields = <String>[].obs;
+
+  bool isLowConfidence(String field) => lowConfidenceFields.contains(field);
+
   final _picker = ImagePicker();
   final _authService = Get.find<AuthService>();
   final _vehicleService = Get.find<VehicleService>();
@@ -45,33 +57,44 @@ class ReviewVehicleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    final path = rcCardPath;
-    if (path != null) {
-      _runOcr(path);
+    if (hasScannedCard) {
+      _runOcr();
     }
   }
 
-  /// FR-02.1: reads the captured RC card photo on-device with Google ML
-  /// Kit, then applies best-effort field extraction (see
-  /// [parseRcCardText]) — every field it fills stays editable below, since
-  /// OCR on a photographed card is never guaranteed to be exact.
-  Future<void> _runOcr(String path) async {
+  /// FR-02.1: sends the captured RC card front/back photos to GPT-4o
+  /// vision (via the `extractRcCardFields` Cloud Function) and fills
+  /// whatever it could read — every field it fills stays editable below,
+  /// since reading a photographed card is never guaranteed to be exact.
+  Future<void> _runOcr() async {
     isScanningRcCard.value = true;
     ocrFailed.value = false;
     try {
-      final recognizedText = await _ocrService.recognizeText(path);
-      final fields = parseRcCardText(recognizedText);
+      // The validator fixes a make/maker-name swap and flags fields that
+      // disagree with the card's MRZ, for the resident to double-check.
+      final validation = validateCard(
+        await _ocrService.extractFields(
+          frontImagePath: frontImagePath,
+          backImagePath: backImagePath,
+        ),
+      );
+      final fields = validation.fields;
+      lowConfidenceFields.assignAll(validation.flaggedFields);
 
+      // Card "Make" (model code, e.g. US 70) -> form "Make"; card "Maker
+      // Name" (manufacturer, e.g. UNITED) -> form "Maker Name" (`model`).
       if (fields.make != null) make.text = fields.make!;
-      if (fields.model != null) model.text = fields.model!;
+      if (fields.makerName != null) model.text = fields.makerName!;
       if (fields.plateNumber != null) plateNumber.text = fields.plateNumber!;
       if (fields.color != null) color.text = fields.color!;
-      if (fields.dateOfRegistration != null) dateOfRegistration.text = fields.dateOfRegistration!;
+      if (fields.dateOfRegistration != null)
+        dateOfRegistration.text = fields.dateOfRegistration!;
       if (fields.engineNumber != null) engineNumber.text = fields.engineNumber!;
-      if (fields.chassisNumber != null) chassisNumber.text = fields.chassisNumber!;
+      if (fields.chassisNumber != null)
+        chassisNumber.text = fields.chassisNumber!;
       if (fields.address != null) address.text = fields.address!;
 
-      if (fields.make == null && fields.plateNumber == null && fields.chassisNumber == null) {
+      if (fields.isMostlyEmpty) {
         AppSnackbar.show(
           "Couldn't read much from that photo",
           'Please check the fields below and fill in anything missing.',
@@ -79,19 +102,40 @@ class ReviewVehicleController extends GetxController {
       }
     } catch (_) {
       ocrFailed.value = true;
-      AppSnackbar.show('Scan failed', 'Retry the scan, or fill in the details manually below.');
+      AppSnackbar.show(
+        'Scan failed',
+        'Retry the scan, or fill in the details manually below.',
+      );
     } finally {
       isScanningRcCard.value = false;
     }
   }
 
-  /// Re-runs OCR against the same captured photo — the "Retry scan"
+  /// Re-runs OCR against the same captured photos — the "Retry scan"
   /// affordance shown when [_runOcr] fails outright. Manual editing of
   /// every field below remains available regardless.
   Future<void> retryOcrScan() {
-    final path = rcCardPath;
-    if (path == null) return Future.value();
-    return _runOcr(path);
+    if (!hasScannedCard) return Future.value();
+    return _runOcr();
+  }
+
+  /// Opens the date picker for the registration date — same constraint as
+  /// Edit Vehicle: a registration date can never be in the future, so
+  /// [lastDate] is today rather than validated after the fact.
+  Future<void> pickRegistrationDate(BuildContext context) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final current = parseRegistrationDate(dateOfRegistration.text);
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current ?? today,
+      firstDate: DateTime(1950),
+      lastDate: today,
+      helpText: 'Date of registration',
+    );
+    if (picked == null) return;
+    dateOfRegistration.text = formatRegistrationDate(picked);
   }
 
   bool get _hasRequiredFields =>
@@ -120,7 +164,10 @@ class ReviewVehicleController extends GetxController {
         if (vehiclePhotos.length < requiredVehiclePhotos)
           '${requiredVehiclePhotos - vehiclePhotos.length} more vehicle photo(s)',
       ];
-      AppSnackbar.show('A few things are missing', 'Please add: ${missing.join(', ')}.');
+      AppSnackbar.show(
+        'A few things are missing',
+        'Please add: ${missing.join(', ')}.',
+      );
       return;
     }
 
@@ -137,8 +184,10 @@ class ReviewVehicleController extends GetxController {
       final localPhotoPaths = vehiclePhotos.map((x) => x.path).toList();
       await _vehicleService.saveVehicle(
         uid: uid,
-        ownerName: (ownerName == null || ownerName.isEmpty) ? 'A ParkTag resident' : ownerName,
-        nickname: nickname.text.trim().isEmpty ? plateNumber.text.trim() : nickname.text.trim(),
+        ownerName: (ownerName == null || ownerName.isEmpty)
+            ? 'A ParkTag resident'
+            : ownerName,
+        nickname: plateNumber.text.trim(),
         make: make.text.trim(),
         model: model.text.trim(),
         plateNumber: plateNumber.text.trim(),
@@ -148,6 +197,8 @@ class ReviewVehicleController extends GetxController {
         chassisNumber: chassisNumber.text.trim(),
         address: address.text.trim(),
         localPhotoPaths: localPhotoPaths,
+        rcCardFrontImagePath: frontImagePath,
+        rcCardBackImagePath: backImagePath,
       );
 
       // HomeTabController streams straight from Firestore (watchVehicles),
@@ -155,10 +206,16 @@ class ReviewVehicleController extends GetxController {
       // list to update here.
       isSaving.value = false;
       Get.offAllNamed(AppRoutes.dashboard);
-      AppSnackbar.show('Vehicle saved', 'Its QR sticker is ready — open the vehicle to view or share it.');
+      AppSnackbar.show(
+        'Vehicle saved',
+        'Its QR sticker is ready — open the vehicle to view or share it.',
+      );
     } catch (_) {
       isSaving.value = false;
-      AppSnackbar.show('Could not save vehicle', 'Something went wrong. Please try again.');
+      AppSnackbar.show(
+        'Could not save vehicle',
+        'Something went wrong. Please try again.',
+      );
     }
   }
 
@@ -172,7 +229,6 @@ class ReviewVehicleController extends GetxController {
     engineNumber.dispose();
     chassisNumber.dispose();
     address.dispose();
-    nickname.dispose();
     super.onClose();
   }
 }
