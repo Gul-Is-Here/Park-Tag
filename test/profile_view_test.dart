@@ -151,4 +151,39 @@ void main() {
 
     expect(find.text('Welcome back'), findsOneWidget);
   });
+
+  testWidgets('Shows a banner when notifications are denied, and hides it once granted', (
+    tester,
+  ) async {
+    final fakeAuth = signedInFakeAuth();
+    Get.put<AuthService>(fakeAuth);
+    final fakePush = Get.find<PushNotificationService>() as FakePushNotificationService;
+    fakePush.permissionGranted = false;
+
+    Get.put(ProfileController());
+    await tester.pumpWidget(const GetMaterialApp(home: Scaffold(body: ProfileView())));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Notifications are turned off'), findsOneWidget);
+
+    fakePush.permissionGranted = true;
+    await tester.tap(find.text("I've enabled it — check again"));
+    await tester.pump();
+
+    expect(find.text('Notifications are turned off'), findsNothing);
+  });
+
+  testWidgets('No banner at all when notifications are already permitted', (tester) async {
+    final fakeAuth = signedInFakeAuth();
+    Get.put<AuthService>(fakeAuth);
+    (Get.find<PushNotificationService>() as FakePushNotificationService).permissionGranted = true;
+
+    Get.put(ProfileController());
+    await tester.pumpWidget(const GetMaterialApp(home: Scaffold(body: ProfileView())));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Notifications are turned off'), findsNothing);
+  });
 }

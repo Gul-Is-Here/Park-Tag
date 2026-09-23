@@ -7,6 +7,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
 import '../../../app/services/deep_link_service.dart';
 import '../../../app/services/push_notification_service.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class OtpController extends GetxController {
   static const codeLength = 6;
@@ -84,15 +85,15 @@ class OtpController extends GetxController {
       onCodeSent: (id) {
         verificationId = id;
         _startCountdown();
-        Get.snackbar('Code resent', 'A new code was sent to +92 $phone.');
+        AppSnackbar.show('Code resent', 'A new code was sent to +92 $phone.');
       },
-      onError: (message) => Get.snackbar('Could not resend', message),
+      onError: (message) => AppSnackbar.show('Could not resend', message),
     );
   }
 
   Future<void> verify() async {
     if (_enteredCode.length != codeLength) {
-      Get.snackbar('Enter the full code', 'The verification code is $codeLength digits.');
+      AppSnackbar.show('Enter the full code', 'The verification code is $codeLength digits.');
       return;
     }
     isVerifying.value = true;
@@ -125,7 +126,7 @@ class OtpController extends GetxController {
       }
     } catch (_) {
       isVerifying.value = false;
-      Get.snackbar('Verification failed', 'The code was incorrect or expired. Please try again.');
+      AppSnackbar.show('Verification failed', 'The code was incorrect or expired. Please try again.');
     }
   }
 

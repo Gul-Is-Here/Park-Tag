@@ -33,6 +33,7 @@ class ScanContactView extends GetView<ScanContactController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: const [
+                  _OpenInAppBanner(),
                   _VehicleCard(),
                   SizedBox(height: 18),
                   _ResolvedRow(),
@@ -345,11 +346,94 @@ class _MessageComposer extends GetView<ScanContactController> {
   }
 }
 
+/// The "Open in App / Continue on Web" choice.
+///
+/// This lives on the WEB PAGE rather than being an OS-level dialog on
+/// purpose. A *verified* Android App Link never shows a chooser — Android
+/// hands the URL straight to the app, which is the fast path and is what
+/// happens once assetlinks.json verifies. The browser therefore only ever
+/// renders this page when there is a real choice left to make: the app
+/// isn't installed, verification hasn't propagated yet, the scan happened
+/// on iOS or desktop, or an in-app browser (Instagram, WhatsApp) swallowed
+/// the App Link. In every one of those cases this banner is the only thing
+/// that can offer "open the app instead", so it is shown at the top of the
+/// page, above the vehicle details.
+class _OpenInAppBanner extends GetView<ScanContactController> {
+  const _OpenInAppBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final handoffUrl = controller.appLinkUrl.value;
+      if (handoffUrl == null || controller.prefersWeb.value) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 18),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.yellow.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Open in the ParkTag app?',
+              style: AppTextStyles.fieldValue.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Chat, voice notes and calls work best in the app. You can also '
+              'just carry on here.',
+              style: AppTextStyles.subtitle.copyWith(color: AppColors.muted, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            GestureDetector(
+              onTap: controller.openApp,
+              child: Container(
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.yellow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Open in App',
+                  style: AppTextStyles.buttonLabel.copyWith(color: Colors.black, fontSize: 14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: controller.dismissAppHandoff,
+              child: Container(
+                height: 44,
+                alignment: Alignment.center,
+                child: Text(
+                  'Continue on Web',
+                  style: AppTextStyles.buttonLabel.copyWith(color: AppColors.muted, fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
 class _DownloadAppBanner extends GetView<ScanContactController> {
   const _DownloadAppBanner();
 
   // TODO: replace with the real published store listings once ParkTag ships.
-  static const _playStoreUrl = 'https://play.google.com/store/apps/details?id=com.parktag.app';
+  static const _playStoreUrl = 'https://play.google.com/store/apps/details?id=com.parktagapp.app';
   static const _appStoreUrl = 'https://apps.apple.com/app/parktag/id0000000000';
 
   @override
@@ -382,21 +466,19 @@ class _DownloadAppBanner extends GetView<ScanContactController> {
             style: AppTextStyles.subtitle.copyWith(color: AppColors.muted, fontSize: 13),
           ),
           const SizedBox(height: 14),
-          Obx(() {
-            // FR-09: once a Branch handoff link is ready, both store buttons
-            // route through it instead of straight to the store, so this
-            // browser's scannerId rides along and gets linked automatically
-            // once the resident signs in — same conversation continues in
-            // the app rather than starting fresh.
-            final handoffUrl = controller.appLinkUrl.value;
-            return Row(
-              children: [
-                Expanded(child: _StoreButton(label: 'App Store', url: handoffUrl ?? _appStoreUrl)),
-                const SizedBox(width: 10),
-                Expanded(child: _StoreButton(label: 'Google Play', url: handoffUrl ?? _playStoreUrl)),
-              ],
-            );
-          }),
+          // Deliberately the plain store listings, NOT the handoff/App Link
+          // URL: this banner exists for people who do NOT have the app, and
+          // an App Link on a device without the app just reloads this same
+          // page — a dead loop for exactly the people it is meant to help.
+          // Continuing the conversation after install is carried by the
+          // scannerId already persisted in this browser, not by this button.
+          Row(
+            children: const [
+              Expanded(child: _StoreButton(label: 'App Store', url: _appStoreUrl)),
+              SizedBox(width: 10),
+              Expanded(child: _StoreButton(label: 'Google Play', url: _playStoreUrl)),
+            ],
+          ),
         ],
       ),
     );

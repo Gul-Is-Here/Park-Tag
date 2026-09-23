@@ -7,6 +7,7 @@ import '../../../app/services/auth_service.dart';
 import '../../../app/services/rc_ocr_service.dart';
 import '../../../app/services/vehicle_service.dart';
 import '../utils/rc_card_parser.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class ReviewVehicleController extends GetxController {
   ReviewVehicleController({required this.rcCardPath});
@@ -71,14 +72,14 @@ class ReviewVehicleController extends GetxController {
       if (fields.address != null) address.text = fields.address!;
 
       if (fields.make == null && fields.plateNumber == null && fields.chassisNumber == null) {
-        Get.snackbar(
+        AppSnackbar.show(
           "Couldn't read much from that photo",
           'Please check the fields below and fill in anything missing.',
         );
       }
     } catch (_) {
       ocrFailed.value = true;
-      Get.snackbar('Scan failed', 'Retry the scan, or fill in the details manually below.');
+      AppSnackbar.show('Scan failed', 'Retry the scan, or fill in the details manually below.');
     } finally {
       isScanningRcCard.value = false;
     }
@@ -119,13 +120,13 @@ class ReviewVehicleController extends GetxController {
         if (vehiclePhotos.length < requiredVehiclePhotos)
           '${requiredVehiclePhotos - vehiclePhotos.length} more vehicle photo(s)',
       ];
-      Get.snackbar('A few things are missing', 'Please add: ${missing.join(', ')}.');
+      AppSnackbar.show('A few things are missing', 'Please add: ${missing.join(', ')}.');
       return;
     }
 
     final uid = _authService.currentUid;
     if (uid == null) {
-      Get.snackbar('Not signed in', 'Please log in again and retry.');
+      AppSnackbar.show('Not signed in', 'Please log in again and retry.');
       return;
     }
 
@@ -154,10 +155,10 @@ class ReviewVehicleController extends GetxController {
       // list to update here.
       isSaving.value = false;
       Get.offAllNamed(AppRoutes.dashboard);
-      Get.snackbar('Vehicle saved', 'Its QR sticker is ready — open the vehicle to view or share it.');
+      AppSnackbar.show('Vehicle saved', 'Its QR sticker is ready — open the vehicle to view or share it.');
     } catch (_) {
       isSaving.value = false;
-      Get.snackbar('Could not save vehicle', 'Something went wrong. Please try again.');
+      AppSnackbar.show('Could not save vehicle', 'Something went wrong. Please try again.');
     }
   }
 

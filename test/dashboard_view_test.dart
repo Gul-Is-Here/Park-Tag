@@ -10,7 +10,12 @@ import 'package:parktag_app/app/services/deep_link_service.dart';
 import 'package:parktag_app/app/services/push_notification_service.dart';
 import 'package:parktag_app/app/services/vehicle_service.dart';
 import 'package:parktag_app/modules/dashboard/bindings/dashboard_binding.dart';
+import 'package:parktag_app/modules/dashboard/controllers/dashboard_controller.dart';
+import 'package:parktag_app/modules/dashboard/controllers/home_tab_controller.dart';
+import 'package:parktag_app/modules/dashboard/controllers/inbox_controller.dart';
+import 'package:parktag_app/modules/dashboard/controllers/profile_controller.dart';
 import 'package:parktag_app/modules/dashboard/views/dashboard_view.dart';
+import 'package:parktag_app/modules/dashboard/widgets/dashboard_bottom_nav.dart';
 
 import 'support/fake_auth_service.dart';
 import 'support/fake_conversation_service.dart';
@@ -81,7 +86,10 @@ void main() {
     // Add Vehicle (RC card OCR) flow — never a QR icon, so it's never
     // mistaken for the QR-to-chat scanner up in the Home tab's app bar.
     expect(find.byIcon(Icons.add_a_photo_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.qr_code_2), findsOneWidget);
+    expect(find.byIcon(Icons.qr_code_scanner_rounded), findsOneWidget);
+    // The Home header's second action opens Messages. It used to be a bell
+    // with no onTap at all.
+    expect(find.byIcon(Icons.forum_outlined), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Messages'), findsOneWidget);
     expect(find.text('Profile'), findsOneWidget);
@@ -144,5 +152,104 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Your vehicles'), findsOneWidget);
+  });
+
+  testWidgets(
+    'Dashboard survives a repaint after its controllers are deleted (logout race)',
+    (tester) async {
+      DashboardBinding().dependencies();
+      await tester.pumpWidget(const GetMaterialApp(home: DashboardView()));
+      await tester.pump();
+
+      // Hold the instance the way the still-mounted widget tree does.
+      final dashboard = Get.find<DashboardController>();
+
+      // What Get.offAllNamed does on logout: the outgoing route's bindings
+      // are deleted while that route is still mounted and animating out.
+      Get.delete<DashboardController>();
+      Get.delete<HomeTabController>();
+      Get.delete<InboxController>();
+      Get.delete<ProfileController>();
+
+      // An observable firing in that window rebuilds the Obx, which used to
+      // re-run Get.find against an empty registry and throw
+      // '"DashboardController" not found'.
+      dashboard.changeTab(1);
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('The Messages tab shows an unread message count badge', (tester) async {
+    DashboardBinding().dependencies();
+    await tester.pumpWidget(const GetMaterialApp(home: DashboardView()));
+    await tester.pump();
+
+    final inbox = Get.find<InboxController>();
+    // This suite's setUp already seeds conversations, so start from
+    // whatever is unread rather than assuming zero.
+    final baseline = inbox.unreadMessageCount;
+
+    for (final text in ['Please move', 'Still blocked']) {
+      await fakeConversations.sendScannerMessage(
+        vehicleId: 'v-nav',
+        scannerId: 's-nav',
+        ownerUid: 'resident-1',
+        plateNumber: 'LEH-5150',
+        colorName: 'Black',
+        scannerName: 'Nadia',
+        text: text,
+      );
+    }
+    await tester.pump();
+
+    // Two messages in one new conversation.
+    expect(inbox.unreadMessageCount, baseline + 2);
+    expect(
+      find.descendant(
+        of: find.byType(DashboardBottomNav),
+        matching: find.text('${baseline + 2}'),
+      ),
+      findsOneWidget,
+    );
+
+    // Reading that thread drops the count by exactly its two messages.
+    await fakeConversations.markReadByOwner('v-nav_s-nav');
+    await tester.pump();
+
+    expect(inbox.unreadMessageCount, baseline);
+    expect(
+      find.descendant(
+        of: find.byType(DashboardBottomNav),
+        matching: find.text('${baseline + 2}'),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('The nav bar renders without the Inbox controller', (tester) async {
+    // The badge must not be able to break the bar — including during the
+    // logout teardown, when the bindings are already gone.
+    Get.put(DashboardController());
+    await tester.pumpWidget(
+      GetMaterialApp(
+        home: Scaffold(
+          bottomNavigationBar: Obx(
+            () => DashboardBottomNav(
+              selectedIndex: Get.find<DashboardController>().tabIndex.value,
+              unreadCount: Get.find<DashboardController>().hasUnreadSource
+                  ? Get.find<DashboardController>().unreadMessageCount
+                  : 0,
+              onTap: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Messages'), findsOneWidget);
   });
 }

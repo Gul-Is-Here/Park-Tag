@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
@@ -15,6 +16,10 @@ class VehicleFormField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.maxLines = 1,
     this.leading,
+    this.inputFormatters,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
   });
 
   final String label;
@@ -26,6 +31,14 @@ class VehicleFormField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final int maxLines;
   final Widget? leading;
+
+  /// Restricts what can be typed or pasted into the field.
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// For fields whose value is chosen rather than typed (the date picker).
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -66,12 +79,19 @@ class VehicleFormField extends StatelessWidget {
                 keyboardType: keyboardType,
                 textCapitalization: textCapitalization,
                 maxLines: maxLines,
+                inputFormatters: inputFormatters,
+                readOnly: readOnly,
+                onTap: onTap,
+                // A picker-backed field should not raise the keyboard.
+                showCursor: !readOnly,
+                mouseCursor: readOnly ? SystemMouseCursors.click : null,
                 style: AppTextStyles.fieldValue.copyWith(
                   color: AppColors.ink,
                   fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
                 ),
                 decoration: InputDecoration(
                   hintText: hint,
+                  suffixIcon: suffixIcon,
                   hintStyle: AppTextStyles.manropeBase.copyWith(color: AppColors.faint),
                   filled: true,
                   fillColor: AppColors.surface,

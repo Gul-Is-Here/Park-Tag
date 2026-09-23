@@ -13,6 +13,10 @@ class CommPreferenceController extends GetxController {
 
   final isSaving = false.obs;
 
+  /// Which option is being saved, so the view can put the spinner on the
+  /// tapped card specifically rather than both at once.
+  final selectedPreference = RxnString();
+
   Future<void> choose(String preference) async {
     final uid = _authService.currentUid;
     if (uid == null) {
@@ -20,6 +24,7 @@ class CommPreferenceController extends GetxController {
       return;
     }
     isSaving.value = true;
+    selectedPreference.value = preference;
     await _authService.saveCommunicationPreference(uid: uid, preference: preference);
     if (preference == 'app') {
       await _pushService.syncToken();

@@ -70,7 +70,8 @@ class OtpView extends GetView<OtpController> {
               Obx(
                 () => AuthPrimaryButton(
                   label: 'Verify',
-                  onPressed: controller.isVerifying.value ? null : controller.verify,
+                  isLoading: controller.isVerifying.value,
+                  onPressed: controller.verify,
                 ),
               ),
               const SizedBox(height: 24),

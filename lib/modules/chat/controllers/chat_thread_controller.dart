@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../../app/services/conversation_service.dart';
 import '../../dashboard/models/chat_message_model.dart';
 import '../../dashboard/models/message_thread_model.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class ChatThreadController extends GetxController {
   ChatThreadController({required this.thread});
@@ -14,8 +15,32 @@ class ChatThreadController extends GetxController {
   final _conversationService = Get.find<ConversationService>();
 
   final textController = TextEditingController();
+  final scrollController = ScrollController();
+
+  /// Confirmed messages from Firestore, plus any optimistic ones this
+  /// device is still sending or failed to send.
   final messages = <ChatMessageModel>[].obs;
+  final _pending = <ChatMessageModel>[].obs;
+
   late final isResolved = thread.isResolved.obs;
+
+  /// True when the reader has scrolled away from the newest messages. New
+  /// arrivals must not yank them back down, so the view shows a tappable
+  /// "new message" pill instead.
+  final isAwayFromLatest = false.obs;
+  final hasUnseenIncoming = false.obs;
+
+  /// Draft text typed but not sent, kept so returning to the thread does
+  /// not silently discard it.
+  static final _drafts = <String, String>{};
+
+  int _lastConfirmedCount = 0;
+
+  /// Set in [onClose]. A queued post-frame scroll callback can otherwise
+  /// still fire after the screen is gone and touch a disposed
+  /// ScrollController — the same class of crash as resolving a deleted
+  /// controller from a rebuild.
+  bool _closed = false;
 
   StreamSubscription<List<ConversationMessage>>? _messagesSub;
   StreamSubscription<ConversationSummary?>? _metaSub;
@@ -35,17 +60,42 @@ class ChatThreadController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    textController.text = _drafts[thread.conversationId] ?? '';
+    scrollController.addListener(_onScroll);
+
     _messagesSub = _conversationService.watchMessages(thread.conversationId).listen((msgs) {
-      messages.assignAll(
-        msgs.map(
-          (m) => ChatMessageModel(
-            sender: m.sender == MessageSender.owner ? ChatSender.owner : ChatSender.scanner,
-            kind: ChatMessageKind.text,
-            timeLabel: _formatTime(m.createdAt),
-            text: m.text,
-          ),
-        ),
+      final confirmed = msgs
+          .map(
+            (m) => ChatMessageModel(
+              sender: m.sender == MessageSender.owner ? ChatSender.owner : ChatSender.scanner,
+              kind: ChatMessageKind.text,
+              timeLabel: _formatTime(m.createdAt),
+              text: m.text,
+              createdAt: m.createdAt,
+            ),
+          )
+          .toList();
+
+      // A confirmed message that matches a pending one is the same message
+      // coming back off the listener — drop the optimistic copy so it
+      // isn't rendered twice.
+      _pending.removeWhere(
+        (p) =>
+            p.status == ChatMessageStatus.sending &&
+            confirmed.any((c) => c.text == p.text && c.sender == p.sender),
       );
+
+      final grew = confirmed.length > _lastConfirmedCount;
+      _lastConfirmedCount = confirmed.length;
+      _rebuild(confirmed);
+
+      if (grew) {
+        if (isAwayFromLatest.value) {
+          hasUnseenIncoming.value = true;
+        } else {
+          _scrollToLatest();
+        }
+      }
     });
     _metaSub = _conversationService.watchConversation(thread.conversationId).listen((summary) {
       if (summary != null) isResolved.value = summary.resolved;
@@ -55,39 +105,124 @@ class ChatThreadController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    // Opening a thread reads it — clear its unread badge in the Inbox.
-    // `unreadForOwner` is specifically the owner's flag, so only clear it
-    // when this viewer actually is the owner.
-    if (thread.viewerRole == ThreadViewerRole.owner && thread.unreadCount > 0) {
-      _conversationService.markReadByOwner(thread.conversationId);
+    // Opening a thread reads it — clear this viewer's own unread flag.
+    // The two sides are tracked separately, so the owner reading a thread
+    // must not clear it for the scanner or vice versa.
+    if (thread.unreadCount > 0) {
+      if (thread.viewerRole == ThreadViewerRole.owner) {
+        _conversationService.markReadByOwner(thread.conversationId);
+      } else {
+        _conversationService.markReadByScanner(thread.conversationId);
+      }
     }
+    // Open on the newest messages, without an animated scroll the reader
+    // would see as a jump.
+    _scrollToLatest(animated: false);
   }
 
+  List<ChatMessageModel> _confirmed = const [];
+
+  void _rebuild(List<ChatMessageModel> confirmed) {
+    _confirmed = confirmed;
+    messages.assignAll([...confirmed, ..._pending]);
+  }
+
+  void _onScroll() {
+    if (!scrollController.hasClients) return;
+    // The list is reversed-in-spirit (newest at the bottom), so "at the
+    // latest" means at the maximum extent.
+    final distanceFromBottom =
+        scrollController.position.maxScrollExtent - scrollController.offset;
+    final away = distanceFromBottom > 140;
+    isAwayFromLatest.value = away;
+    if (!away) hasUnseenIncoming.value = false;
+  }
+
+  void _scrollToLatest({bool animated = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_closed || !scrollController.hasClients) return;
+      final target = scrollController.position.maxScrollExtent;
+      if (animated) {
+        scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOut,
+        );
+      } else {
+        scrollController.jumpTo(target);
+      }
+    });
+  }
+
+  /// Tapping the "new message" pill.
+  void jumpToLatest() {
+    hasUnseenIncoming.value = false;
+    _scrollToLatest();
+  }
+
+  /// The message is rendered immediately and the Firestore write happens
+  /// behind it — the sender never waits on the network to see their own
+  /// message. A failure marks that bubble as failed and keeps the text so
+  /// it can be retried, rather than dropping it on the floor.
   void sendText() {
     final text = textController.text.trim();
     if (text.isEmpty) return;
     textController.clear();
-    if (thread.viewerRole == ThreadViewerRole.owner) {
-      _conversationService.sendOwnerReply(conversationId: thread.conversationId, text: text);
-    } else {
-      _conversationService.sendAuthenticatedScannerReply(conversationId: thread.conversationId, text: text);
-    }
+    _drafts.remove(thread.conversationId);
+    _dispatch(text);
+  }
+
+  void _dispatch(String text) {
+    final optimistic = ChatMessageModel(
+      sender: thread.viewerRole == ThreadViewerRole.owner ? ChatSender.owner : ChatSender.scanner,
+      kind: ChatMessageKind.text,
+      timeLabel: _formatTime(DateTime.now()),
+      text: text,
+      status: ChatMessageStatus.sending,
+      createdAt: DateTime.now(),
+      localId: '${DateTime.now().microsecondsSinceEpoch}',
+    );
+    _pending.add(optimistic);
+    _rebuild(_confirmed);
+    _scrollToLatest();
+
+    final write = thread.viewerRole == ThreadViewerRole.owner
+        ? _conversationService.sendOwnerReply(conversationId: thread.conversationId, text: text)
+        : _conversationService.sendAuthenticatedScannerReply(
+            conversationId: thread.conversationId,
+            text: text,
+          );
+
+    write.catchError((_) {
+      final i = _pending.indexWhere((m) => m.localId == optimistic.localId);
+      if (i != -1) {
+        _pending[i] = _pending[i].copyWith(status: ChatMessageStatus.failed);
+        _rebuild(_confirmed);
+      }
+    });
+  }
+
+  /// Re-sends a message whose write failed, from its own bubble.
+  void retry(ChatMessageModel message) {
+    _pending.removeWhere((m) => m.localId == message.localId);
+    _rebuild(_confirmed);
+    _dispatch(message.text);
   }
 
   // TODO(FR-05.2): wire to the `record`/`just_audio` packages for real
   // voice-note capture and playback.
   void recordVoiceNote() {
-    Get.snackbar('Coming soon', 'Voice notes are not available yet.');
+    AppSnackbar.show('Coming soon', 'Voice notes are not available yet.');
   }
 
   // TODO(FR-05.3): wire to image_picker + Firebase Storage upload.
   void attachMedia() {
-    Get.snackbar('Coming soon', 'Sending photos and videos is not available yet.');
+    AppSnackbar.show('Coming soon', 'Sending photos and videos is not available yet.');
   }
 
   // TODO(FR-05.4): wire to agora_rtc_engine for in-app audio/video calls.
   void startCall({required bool video}) {
-    Get.snackbar('Coming soon', '${video ? 'Video' : 'Audio'} calls are not available yet.');
+    AppSnackbar.show('Coming soon', '${video ? 'Video' : 'Audio'} calls are not available yet.');
   }
 
   void markResolved() {
@@ -110,8 +245,17 @@ class ChatThreadController extends GetxController {
 
   @override
   void onClose() {
+    _closed = true;
+    final draft = textController.text.trim();
+    if (draft.isEmpty) {
+      _drafts.remove(thread.conversationId);
+    } else {
+      _drafts[thread.conversationId] = draft;
+    }
     _messagesSub?.cancel();
     _metaSub?.cancel();
+    scrollController.removeListener(_onScroll);
+    scrollController.dispose();
     textController.dispose();
     super.onClose();
   }

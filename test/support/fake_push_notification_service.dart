@@ -10,9 +10,13 @@ class FakePushNotificationService implements PushNotificationService {
 
   int syncTokenCallCount = 0;
   int unregisterCallCount = 0;
+  bool permissionGranted = true;
 
   @override
   Future<void> init() async {}
+
+  @override
+  Future<bool> hasPermission() async => permissionGranted;
 
   @override
   Future<void> syncToken() async {

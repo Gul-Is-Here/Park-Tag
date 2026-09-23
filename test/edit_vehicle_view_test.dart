@@ -11,6 +11,7 @@ import 'package:parktag_app/modules/vehicle_details/views/edit_vehicle_view.dart
 
 import 'support/fake_auth_service.dart';
 import 'support/fake_vehicle_service.dart';
+import 'package:parktag_app/app/utils/vehicle_input.dart';
 
 const _vehicle = VehicleModel(
   nickname: 'White Corolla',
@@ -18,7 +19,7 @@ const _vehicle = VehicleModel(
   plateNumber: 'LEA-2231',
   color: Color(0xFFF5F1E8),
   colorName: 'White',
-  dateOfRegistration: '14 Mar 2022',
+  dateOfRegistration: '02 Apr 2021',
   engineNumber: '2ZR-4498231',
   chassisNumber: 'MR053CE3204119876',
   address: '123-B, Model Town, Lahore',
@@ -43,7 +44,6 @@ void main() {
     expect(controller.make.text, 'Toyota');
     expect(controller.model.text, 'Corolla Altis');
     expect(controller.plateNumber.text, 'LEA-2231');
-    expect(controller.nickname.text, 'White Corolla');
     expect(controller.vehiclePhotos, ['/tmp/front.jpg', '/tmp/back.jpg']);
     expect(controller.canSave, isTrue);
   });
@@ -56,6 +56,45 @@ void main() {
 
     controller.vehiclePhotos.add('/tmp/new-front.jpg');
     expect(controller.canSave, isTrue);
+  });
+
+  testWidgets('The nickname field is gone from the form', (tester) async {
+    Get.put(EditVehicleController(vehicle: _vehicle));
+
+    await tester.pumpWidget(const GetMaterialApp(home: EditVehicleView()));
+    await tester.pump();
+
+    expect(find.text('VEHICLE NICKNAME'), findsNothing);
+    expect(find.text('e.g. White Corolla'), findsNothing);
+  });
+
+  testWidgets('Tapping the date field opens a picker that stops at today', (tester) async {
+    final controller = Get.put(EditVehicleController(vehicle: _vehicle));
+
+    await tester.pumpWidget(const GetMaterialApp(home: EditVehicleView()));
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(TextField, '02 Apr 2021'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+
+    final dialog = tester.widget<DatePickerDialog>(find.byType(DatePickerDialog));
+    final now = DateTime.now();
+    // A registration date can never be in the future, so the picker itself
+    // refuses to offer one rather than validating after the fact.
+    expect(dialog.lastDate, DateTime(now.year, now.month, now.day));
+    expect(dialog.initialDate, DateTime(2021, 4, 2));
+
+    // Typing into the field directly is not possible — it is picker-backed.
+    final field = tester.widget<TextField>(
+      find.widgetWithText(TextField, '02 Apr 2021'),
+    );
+    expect(field.readOnly, isTrue);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(controller.dateOfRegistration.text, '02 Apr 2021');
   });
 
   testWidgets('Edit screen renders the form and photo section', (tester) async {
@@ -75,7 +114,9 @@ void main() {
     home.vehicles.assignAll([_vehicle]);
 
     final controller = Get.put(EditVehicleController(vehicle: _vehicle));
-    controller.nickname.text = 'Renamed Corolla';
+    // The nickname field was removed from this form, so edit one that is
+    // still there.
+    controller.model.text = 'Corolla Altis';
 
     await tester.pumpWidget(
       GetMaterialApp(
@@ -93,7 +134,66 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
 
     expect(home.vehicles.length, 1);
-    expect(home.vehicles.first.nickname, 'Renamed Corolla');
+    expect(home.vehicles.first.makeModel, 'Toyota Corolla Altis');
     expect(home.vehicles.first.plateNumber, 'LEA-2231');
+    // Removing the field must not wipe the stored nickname — the Home
+    // card, the remove dialog and the public scan page all show it.
+    expect(home.vehicles.first.nickname, _vehicle.nickname);
+  });
+
+  test('Identifier fields reject special characters but keep hyphens and spaces', () {
+    // Real plate, engine and chassis numbers contain hyphens, and the
+    // form's own hints are LEA-2231 / 2ZR-4498231, so those must survive.
+    String filter(String input) => vehicleIdentifierFormatter
+        .formatEditUpdate(TextEditingValue.empty, TextEditingValue(text: input))
+        .text;
+
+    expect(filter('LEA-2231'), 'LEA-2231');
+    expect(filter('MR053CE3204119876'), 'MR053CE3204119876');
+    expect(filter('ABC 123'), 'ABC 123');
+    expect(filter(r'LEA@#2231!'), 'LEA2231');
+    expect(filter('AB/CD*12'), 'ABCD12');
+  });
+
+  test('Name-like fields (make, model, address, nickname) reject the hyphen too', () {
+    // Unlike vehicleIdentifierFormatter, these are name/description fields
+    // with no fixed real-world format requiring a hyphen, so it is
+    // rejected along with every other special character. Digits still
+    // pass — an address needs a house number and a model can be "Corolla
+    // 2.0" — only letters, digits and spaces survive.
+    String filter(String input) => vehicleNameFormatter
+        .formatEditUpdate(TextEditingValue.empty, TextEditingValue(text: input))
+        .text;
+
+    expect(filter('Toyota'), 'Toyota');
+    expect(filter('Corolla Altis'), 'Corolla Altis');
+    expect(filter('123 B Model Town Lahore'), '123 B Model Town Lahore');
+    expect(filter('White Corolla'), 'White Corolla');
+    expect(filter('123-B, Model Town, Lahore'), '123B Model Town Lahore');
+    expect(filter(r'Toyota@#!'), 'Toyota');
+  });
+
+  group('Registration date', () {
+    test('Parses the formats already stored, and rejects impossible ones', () {
+      expect(parseRegistrationDate('2021-04-02'), DateTime(2021, 4, 2));
+      expect(parseRegistrationDate('14 Mar 2022'), DateTime(2022, 3, 14));
+      expect(parseRegistrationDate('14/03/2022'), DateTime(2022, 3, 14));
+      expect(parseRegistrationDate('14-03-2022'), DateTime(2022, 3, 14));
+      expect(parseRegistrationDate(''), isNull);
+      expect(parseRegistrationDate('not a date'), isNull);
+      // 31 February does not exist.
+      expect(parseRegistrationDate('31/02/2022'), isNull);
+    });
+
+    test('Refuses a future date, which a registration date can never be', () {
+      final nextYear = DateTime.now().year + 1;
+      expect(parseRegistrationDate('14 Mar $nextYear'), isNull);
+      expect(parseRegistrationDate('$nextYear-03-14'), isNull);
+    });
+
+    test('Writes back one consistent format', () {
+      expect(formatRegistrationDate(DateTime(2022, 3, 14)), '14 Mar 2022');
+      expect(formatRegistrationDate(DateTime(2005, 12, 1)), '01 Dec 2005');
+    });
   });
 }

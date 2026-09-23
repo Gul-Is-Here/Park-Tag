@@ -8,23 +8,43 @@ import '../models/vehicle_model.dart';
 import 'vehicle_image_thumb.dart';
 import 'vehicle_qr_thumb.dart';
 
+/// One owned vehicle on the Home tab. Shows only fields the vehicle
+/// document actually carries — photo, nickname, make/model, colour and
+/// plate — plus its QR thumbnail, which is the point of the app.
 class VehicleCard extends StatelessWidget {
-  const VehicleCard({super.key, required this.vehicle});
+  const VehicleCard({super.key, required this.vehicle, this.hasUnread = false});
 
   final VehicleModel vehicle;
 
+  /// Driven by the Inbox listener rather than [VehicleModel.hasUnread],
+  /// which is never populated anywhere in the app.
+  final bool hasUnread;
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.vehicleDetails, arguments: vehicle),
-      child: Stack(
-      children: [
-        Container(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.vehicleDetails, arguments: vehicle),
+        borderRadius: BorderRadius.circular(20),
+        splashColor: AppColors.yellow.withValues(alpha: 0.06),
+        highlightColor: AppColors.yellow.withValues(alpha: 0.04),
+        child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: hasUnread ? AppColors.yellow.withValues(alpha: 0.5) : const Color(0xFF2E2E29),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -34,70 +54,113 @@ class VehicleCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      vehicle.nickname,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.headingSm.copyWith(
-                        color: AppColors.ink,
-                        fontSize: 16,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      vehicle.makeModel,
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: vehicle.color,
-                            border: Border.all(color: const Color(0xFF33332E)),
+                        Flexible(
+                          child: Text(
+                            vehicle.nickname.isEmpty ? vehicle.makeModel : vehicle.nickname,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.headingSm.copyWith(
+                              color: AppColors.ink,
+                              fontSize: 16,
+                              letterSpacing: 0,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          vehicle.plateNumber,
-                          style: AppTextStyles.label.copyWith(
-                            color: AppColors.muted,
-                            letterSpacing: 0,
-                          ),
-                        ),
+                        if (hasUnread) ...[
+                          const SizedBox(width: 8),
+                          const _UnreadDot(),
+                        ],
                       ],
                     ),
+                    if (vehicle.makeModel.isNotEmpty && vehicle.nickname.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        vehicle.makeModel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 9),
+                    _PlateChip(vehicle: vehicle),
                   ],
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               const VehicleQrThumb(),
             ],
           ),
         ),
-        if (vehicle.hasUnread)
-          Positioned(
-            top: 14,
-            right: 14,
-            child: Container(
+      ),
+    );
+  }
+}
+
+class _PlateChip extends StatelessWidget {
+  const _PlateChip({required this.vehicle});
+
+  final VehicleModel vehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: const Color(0xFF2E2E29)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
               width: 10,
               height: 10,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.yellow,
-                border: Border.all(color: AppColors.surface, width: 3),
+                color: vehicle.color,
+                border: Border.all(color: const Color(0xFF3A3A34)),
               ),
             ),
-          ),
-      ],
+            const SizedBox(width: 7),
+            Text(
+              vehicle.plateNumber,
+              style: AppTextStyles.label.copyWith(color: AppColors.muted, letterSpacing: 0.3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Paired with the yellow card border, so "has unread" is never carried by
+/// colour alone.
+class _UnreadDot extends StatelessWidget {
+  const _UnreadDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Unread messages',
+      child: Container(
+        width: 9,
+        height: 9,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.yellow,
+          boxShadow: [
+            BoxShadow(color: AppColors.yellow.withValues(alpha: 0.45), blurRadius: 6, spreadRadius: 1),
+          ],
+        ),
       ),
     );
   }

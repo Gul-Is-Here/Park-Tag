@@ -56,7 +56,16 @@ exports.onNewChatMessage = onDocumentCreated(
         scannerName,
         colorName: conversation.colorName || "",
       },
-      android: { priority: "high" },
+      android: {
+        priority: "high",
+        notification: {
+          // Must match MainActivity.MESSAGES_CHANNEL_ID and the manifest's
+          // default_notification_channel_id. Naming it explicitly means the
+          // push does not depend on the client's default being configured.
+          channelId: "parktag_messages",
+          sound: "default",
+        },
+      },
       apns: { payload: { aps: { sound: "default" } } },
     });
 
@@ -172,17 +181,52 @@ exports.resolveVehicleAndOpenChat = onCall(async (request) => {
     throw new HttpsError("failed-precondition", "This is your own vehicle — nothing to message.");
   }
 
-  const conversationId = `${vehicleId}_${scannerUid}`;
-  const conversationRef = db.collection("conversations").doc(conversationId);
-
   const scannerSnap = await db.collection("users").doc(scannerUid).get();
   const scannerName = scannerSnap.data()?.name || "A ParkTag resident";
+
+  // FR-09: this scan may be a continuation of a conversation this person
+  // already started anonymously from the public web page, before they had
+  // an account. That conversation is keyed by the browser's random
+  // scannerId, so when the deep link carries one, adopt that document
+  // instead of creating a parallel empty chat under the new uid — that is
+  // what "restores" the web conversation in the app, with its history.
+  //
+  // Only an UNCLAIMED conversation (or one already claimed by this same
+  // uid) may be adopted. A scannerId belonging to someone else's browser
+  // must never let this caller take over their chat.
+  const anonymousScannerId = request.data?.scannerId;
+  let conversationId = `${vehicleId}_${scannerUid}`;
+
+  if (anonymousScannerId && typeof anonymousScannerId === "string") {
+    const anonymousId = `${vehicleId}_${anonymousScannerId}`;
+    const anonymousSnap = await db.collection("conversations").doc(anonymousId).get();
+    const anonymous = anonymousSnap.data();
+    const claimedBySomeoneElse =
+      anonymous?.scannerUid && anonymous.scannerUid !== scannerUid;
+
+    if (anonymous && anonymous.vehicleId === vehicleId && !claimedBySomeoneElse) {
+      conversationId = anonymousId;
+      logger.info(
+        `Adopting anonymous conversation ${anonymousId} for uid ${scannerUid}.`,
+      );
+    }
+  }
+
+  const conversationRef = db.collection("conversations").doc(conversationId);
 
   // All reads before any writes — required for a Firestore transaction.
   const conversation = await db.runTransaction(async (tx) => {
     const existing = await tx.get(conversationRef);
     if (existing.exists) {
-      return existing.data();
+      const data = existing.data();
+      // Claim an adopted anonymous conversation for this account, which is
+      // what makes it appear under "Sent" and lets them reply as
+      // themselves rather than as an anonymous web visitor.
+      if (!data.scannerUid) {
+        tx.update(conversationRef, { scannerUid, scannerName });
+        return { ...data, scannerUid, scannerName };
+      }
+      return data;
     }
 
     const data = {
@@ -196,6 +240,9 @@ exports.resolveVehicleAndOpenChat = onCall(async (request) => {
       colorName: vehicle.colorName || "",
       resolved: false,
       unreadForOwner: false,
+      unreadForScanner: false,
+      unreadCountForOwner: 0,
+      unreadCountForScanner: 0,
       lastMessagePreview: "",
       lastMessageAt: FieldValue.serverTimestamp(),
       createdAt: FieldValue.serverTimestamp(),

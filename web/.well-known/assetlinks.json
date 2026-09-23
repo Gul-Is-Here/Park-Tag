@@ -5,8 +5,7 @@
       "namespace": "android_app",
       "package_name": "com.parktagapp.app",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_DEBUG_SHA256_FINGERPRINT",
-        "REPLACE_WITH_YOUR_RELEASE_SHA256_FINGERPRINT"
+        "20:60:F1:AE:DD:8B:B2:9C:10:19:BA:99:4A:60:A4:7B:92:F9:92:24:7D:B7:6C:14:41:A7:59:D9:D7:C6:41:25"
       ]
     }
   }

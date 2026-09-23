@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../app/utils/vehicle_input.dart';
 import '../../dashboard/controllers/home_tab_controller.dart';
 import '../../dashboard/models/vehicle_model.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class EditVehicleController extends GetxController {
   EditVehicleController({required this.vehicle});
@@ -20,7 +22,6 @@ class EditVehicleController extends GetxController {
   late final engineNumber = TextEditingController(text: vehicle.engineNumber);
   late final chassisNumber = TextEditingController(text: vehicle.chassisNumber);
   late final address = TextEditingController(text: vehicle.address);
-  late final nickname = TextEditingController(text: vehicle.nickname);
 
   late final vehiclePhotos = <String>[...vehicle.photoPaths].obs;
   final isSaving = false.obs;
@@ -41,6 +42,27 @@ class EditVehicleController extends GetxController {
 
   bool get canSave => _hasRequiredFields && vehiclePhotos.length >= requiredVehiclePhotos;
 
+  /// Opens the date picker for the registration date.
+  ///
+  /// A registration date can never be in the future, so [lastDate] is today
+  /// — the picker simply will not offer a later day, which is a firmer
+  /// guarantee than validating after the fact.
+  Future<void> pickRegistrationDate(BuildContext context) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final current = parseRegistrationDate(dateOfRegistration.text);
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current ?? today,
+      firstDate: DateTime(1950),
+      lastDate: today,
+      helpText: 'Date of registration',
+    );
+    if (picked == null) return;
+    dateOfRegistration.text = formatRegistrationDate(picked);
+  }
+
   Future<void> addVehiclePhoto(ImageSource source) async {
     if (vehiclePhotos.length >= requiredVehiclePhotos) return;
     final photo = await _picker.pickImage(source: source, imageQuality: 85);
@@ -59,14 +81,18 @@ class EditVehicleController extends GetxController {
         if (vehiclePhotos.length < requiredVehiclePhotos)
           '${requiredVehiclePhotos - vehiclePhotos.length} more vehicle photo(s)',
       ];
-      Get.snackbar('A few things are missing', 'Please add: ${missing.join(', ')}.');
+      AppSnackbar.show('A few things are missing', 'Please add: ${missing.join(', ')}.');
       return;
     }
 
     isSaving.value = true;
     final updated = VehicleModel(
       id: vehicle.id,
-      nickname: nickname.text.trim().isEmpty ? plateNumber.text.trim() : nickname.text.trim(),
+      // The nickname field was removed from this form, so the vehicle
+      // keeps the one it already has. Falling back to the plate number
+      // covers vehicles that never had one — the Home card, the remove
+      // dialog and the public scan page all display this.
+      nickname: vehicle.nickname.trim().isEmpty ? plateNumber.text.trim() : vehicle.nickname.trim(),
       makeModel: '${make.text.trim()} ${model.text.trim()}'.trim(),
       plateNumber: plateNumber.text.trim(),
       color: _swatchFor(color.text.trim()),
@@ -93,7 +119,7 @@ class EditVehicleController extends GetxController {
     // VehicleDetailsControllers, stacked at once, which crashed on the
     // duplicate QR-card GlobalKey.
     Get.back(result: updated);
-    Get.snackbar('Changes saved', "${updated.nickname}'s details were updated.");
+    AppSnackbar.show('Changes saved', "${updated.nickname}'s details were updated.");
   }
 
   static Color _swatchFor(String name) {
@@ -126,7 +152,6 @@ class EditVehicleController extends GetxController {
     engineNumber.dispose();
     chassisNumber.dispose();
     address.dispose();
-    nickname.dispose();
     super.onClose();
   }
 }

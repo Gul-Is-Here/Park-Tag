@@ -24,13 +24,6 @@ void main() async {
   usePathUrlStrategy();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // App Check enforcement is on for Firestore/Functions/Storage — every
-  // request needs a token attached or it's rejected outright. In debug
-  // builds this uses the debug provider: on first run it prints a token to
-  // the device log (logcat / Xcode console) that must be pasted into
-  // Firebase Console > App Check > this app > Manage debug tokens, or every
-  // request keeps failing even with this wired up. Web uses a reCAPTCHA
-  // v3 site key instead — see the TODO below.
   await FirebaseAppCheck.instance.activate(
     androidProvider: kDebugMode
         ? AndroidProvider.debug

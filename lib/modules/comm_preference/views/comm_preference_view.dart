@@ -33,6 +33,7 @@ class CommPreferenceView extends GetView<CommPreferenceController> {
                       subtitle: 'Push notifications the moment someone messages you. Recommended.',
                       icon: Icons.notifications_active_outlined,
                       enabled: !controller.isSaving.value,
+                      isLoading: controller.selectedPreference.value == 'app',
                       onTap: () => controller.choose('app'),
                     ),
                     const SizedBox(height: 16),
@@ -41,6 +42,7 @@ class CommPreferenceView extends GetView<CommPreferenceController> {
                       subtitle: "I'll check replies through the chat link shared when someone scans.",
                       icon: Icons.language_outlined,
                       enabled: !controller.isSaving.value,
+                      isLoading: controller.selectedPreference.value == 'web',
                       onTap: () => controller.choose('web'),
                     ),
                   ],
@@ -65,6 +67,7 @@ class _PreferenceCard extends StatelessWidget {
     required this.icon,
     required this.enabled,
     required this.onTap,
+    this.isLoading = false,
   });
 
   final String title;
@@ -72,6 +75,11 @@ class _PreferenceCard extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final VoidCallback onTap;
+
+  /// True while THIS card's choice is the one being saved — puts the
+  /// spinner on the tapped card, not both, since only one save is
+  /// actually in flight.
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +110,13 @@ class _PreferenceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.muted),
+              isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.yellow),
+                    )
+                  : const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),

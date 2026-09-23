@@ -10,6 +10,7 @@ import '../../auth/widgets/auth_primary_button.dart';
 import '../controllers/review_vehicle_controller.dart';
 import '../widgets/vehicle_form_field.dart';
 import '../widgets/vehicle_photo_tile.dart';
+import '../../../app/utils/vehicle_input.dart';
 
 class ReviewVehicleView extends GetView<ReviewVehicleController> {
   const ReviewVehicleView({super.key});
@@ -136,7 +137,12 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
               Row(
                 children: [
                   Expanded(
-                    child: VehicleFormField(label: 'Make', controller: controller.make, hint: 'Toyota'),
+                    child: VehicleFormField(
+                      label: 'Make',
+                      controller: controller.make,
+                      hint: 'Toyota',
+                      inputFormatters: [vehicleNameFormatter],
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -144,6 +150,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                       label: 'Model',
                       controller: controller.model,
                       hint: 'Corolla Altis',
+                      inputFormatters: [vehicleNameFormatter],
                     ),
                   ),
                 ],
@@ -155,6 +162,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                 hint: 'LEA-2231',
                 emphasize: true,
                 textCapitalization: TextCapitalization.characters,
+                inputFormatters: [vehicleIdentifierFormatter],
               ),
               const SizedBox(height: 18),
               Row(
@@ -181,20 +189,25 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                 label: 'Engine number',
                 controller: controller.engineNumber,
                 hint: '2ZR-4498231',
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: [vehicleIdentifierFormatter],
               ),
               const SizedBox(height: 18),
               VehicleFormField(
                 label: 'Chassis number',
                 controller: controller.chassisNumber,
                 hint: 'MR053CE3204119876',
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: [vehicleIdentifierFormatter],
               ),
               const SizedBox(height: 18),
               VehicleFormField(
                 label: 'Registered address',
                 helper: '(optional)',
                 controller: controller.address,
-                hint: '123-B, Model Town, Lahore',
+                hint: '123 B Model Town Lahore',
                 maxLines: 2,
+                inputFormatters: [vehicleNameFormatter],
               ),
               const SizedBox(height: 18),
               VehicleFormField(
@@ -202,6 +215,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                 helper: '(optional)',
                 controller: controller.nickname,
                 hint: 'e.g. White Corolla',
+                inputFormatters: [vehicleNameFormatter],
               ),
               const SizedBox(height: 28),
               Obx(() {
@@ -268,7 +282,8 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                   children: [
                     AuthPrimaryButton(
                       label: 'Save Vehicle',
-                      onPressed: busy || !enoughPhotos ? null : controller.save,
+                      isLoading: busy,
+                      onPressed: !enoughPhotos ? null : controller.save,
                     ),
                     if (!enoughPhotos)
                       Padding(

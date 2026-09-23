@@ -12,6 +12,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../dashboard/controllers/home_tab_controller.dart';
 import '../../dashboard/models/vehicle_model.dart';
 import '../widgets/remove_vehicle_dialog.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class VehicleDetailsController extends GetxController {
   VehicleDetailsController({required VehicleModel vehicle}) : _vehicle = vehicle.obs;
@@ -43,7 +44,7 @@ class VehicleDetailsController extends GetxController {
       Get.find<HomeTabController>().vehicles.remove(vehicle);
     }
     Get.back();
-    Get.snackbar('Vehicle removed', '${vehicle.nickname} was removed from your vehicles.');
+    AppSnackbar.show('Vehicle removed', '${vehicle.nickname} was removed from your vehicles.');
   }
 
   Future<void> shareQrCode() async {
@@ -69,7 +70,7 @@ class VehicleDetailsController extends GetxController {
         ),
       );
     } catch (_) {
-      Get.snackbar('Could not share', 'Something went wrong generating the QR image.');
+      AppSnackbar.show('Could not share', 'Something went wrong generating the QR image.');
     } finally {
       isSharing.value = false;
     }

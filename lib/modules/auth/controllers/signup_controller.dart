@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class SignUpController extends GetxController {
   final fullName = TextEditingController();
@@ -19,7 +20,7 @@ class SignUpController extends GetxController {
       if (cnic.text.trim().isEmpty) 'your CNIC',
     ];
     if (missing.isNotEmpty) {
-      Get.snackbar('A few things are missing', 'Please add: ${missing.join(', ')}.');
+      AppSnackbar.show('A few things are missing', 'Please add: ${missing.join(', ')}.');
       return;
     }
 
@@ -29,7 +30,7 @@ class SignUpController extends GetxController {
     final alreadyRegistered = await _authService.phoneIsRegistered(e164Phone);
     if (alreadyRegistered) {
       isSubmitting.value = false;
-      Get.snackbar('Account already exists', 'This number is already registered — please log in instead.');
+      AppSnackbar.show('Account already exists', 'This number is already registered — please log in instead.');
       return;
     }
 
@@ -50,7 +51,7 @@ class SignUpController extends GetxController {
       },
       onError: (message) {
         isSubmitting.value = false;
-        Get.snackbar('Could not send code', message);
+        AppSnackbar.show('Could not send code', message);
       },
     );
   }

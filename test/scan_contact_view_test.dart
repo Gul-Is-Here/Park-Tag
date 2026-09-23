@@ -70,6 +70,11 @@ void main() {
     await tester.pump();
 
     await tester.enterText(find.byType(TextField).last, 'Please move your car');
+    // The page now opens with the "Open in App / Continue on Web" handoff
+    // banner above the vehicle card, which pushes the composer past the
+    // bottom of the test viewport — scroll it into view before tapping.
+    await tester.ensureVisible(find.text('Send message'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Send message'));
     await tester.pump();
     await tester.pump();

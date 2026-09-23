@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -55,6 +57,40 @@ void main() {
     // Let the snackbar's auto-dismiss timer finish so no timer is left
     // pending when the test tears down.
     await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('Login shows a loading spinner on the button while the request is in flight', (
+    tester,
+  ) async {
+    // A Completer this test controls, so the request has a real, held-open
+    // in-flight window to observe — the real fake resolves within a single
+    // microtask turn, too fast for a bare pump() to ever catch mid-flight.
+    final gate = Completer<bool>();
+    final fakeAuth = _GatedAuthService(gate.future);
+    Get.put<AuthService>(fakeAuth);
+    AuthBinding().dependencies();
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        initialRoute: AppRoutes.login,
+        getPages: [
+          GetPage(name: AppRoutes.login, page: () => const LoginView()),
+          GetPage(name: AppRoutes.otp, page: () => const SizedBox.shrink()),
+        ],
+      ),
+    );
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), '3001234567');
+    await tester.tap(find.text('Send OTP'));
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Send OTP'), findsNothing);
+
+    gate.complete(true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   testWidgets('Login blocks an unregistered number and points to sign up', (tester) async {
@@ -120,4 +156,17 @@ void main() {
     // no snackbar, but a real "Send OTP" tap does — flush any pending timer.
     await tester.pump(const Duration(seconds: 4));
   });
+}
+
+/// Wraps [FakeAuthService] but holds `phoneIsRegistered` open until
+/// [gate] resolves, giving a test a real window to observe the loading
+/// state in — the plain fake resolves too fast (no real async gap) for a
+/// bare pump() to ever catch the button mid-request.
+class _GatedAuthService extends FakeAuthService {
+  _GatedAuthService(this.gate);
+
+  final Future<bool> gate;
+
+  @override
+  Future<bool> phoneIsRegistered(String e164Phone) => gate;
 }

@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/widgets/bound_view.dart';
+
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../auth/widgets/auth_primary_button.dart';
 import '../../vehicle/widgets/vehicle_form_field.dart';
 import '../controllers/profile_controller.dart';
 
-class ProfileView extends GetView<ProfileController> {
+class ProfileView extends BoundView<ProfileController> {
   const ProfileView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildWith(BuildContext context, ProfileController controller) {
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(
@@ -23,6 +26,65 @@ class ProfileView extends GetView<ProfileController> {
         cnic: controller.cnic.value,
       );
     });
+  }
+}
+
+/// Only shown while [ProfileController.notificationsPermitted] is false.
+///
+/// Why this exists: FCM reports a push as "successfully delivered" the
+/// moment it reaches the device, regardless of whether the OS is actually
+/// allowed to show it. With notifications denied, that push is silently
+/// discarded — from the backend's side (and from a resident just staring
+/// at the app) it looks identical to a broken token, when the real cause
+/// is a permission this app can only ask for once.
+class _NotificationsOffBanner extends StatelessWidget {
+  const _NotificationsOffBanner({required this.onTapRecheck});
+
+  final VoidCallback onTapRecheck;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2210),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.yellow.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.notifications_off_outlined, color: AppColors.yellow, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notifications are turned off',
+                  style: AppTextStyles.fieldValue.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "You won't be alerted when someone messages you. Enable "
+                  'notifications for ParkTag in your phone\'s Settings app, '
+                  'then come back here.',
+                  style: AppTextStyles.subtitle.copyWith(color: AppColors.muted, fontSize: 12.5, height: 1.4),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: onTapRecheck,
+                  child: Text(
+                    "I've enabled it — check again",
+                    style: AppTextStyles.linkTextEmphasis.copyWith(color: AppColors.yellow, fontSize: 12.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -44,7 +106,16 @@ class _ProfileForm extends StatelessWidget {
           'Profile',
           style: AppTextStyles.headingLg.copyWith(color: AppColors.ink, fontSize: 24),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
+        Obx(
+          () => controller.notificationsPermitted.value
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _NotificationsOffBanner(onTapRecheck: controller.recheckNotificationPermission),
+                ),
+        ),
+        const SizedBox(height: 6),
 
         // Identity
         Row(
@@ -157,18 +228,11 @@ class _ProfileForm extends StatelessWidget {
         ],
 
         Obx(
-          () => GestureDetector(
-            onTap: controller.isSaving.value ? null : controller.save,
-            child: Container(
-              height: 52,
-              decoration: BoxDecoration(color: AppColors.yellow, borderRadius: BorderRadius.circular(14)),
-              child: Center(
-                child: Text(
-                  'Save Changes',
-                  style: AppTextStyles.buttonLabel.copyWith(color: AppColors.background, fontSize: 15),
-                ),
-              ),
-            ),
+          () => AuthPrimaryButton(
+            label: 'Save Changes',
+            isLoading: controller.isSaving.value,
+            onPressed: controller.save,
+            height: 52,
           ),
         ),
 

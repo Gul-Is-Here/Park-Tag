@@ -56,7 +56,8 @@ class SignUpView extends GetView<SignUpController> {
               Obx(
                 () => AuthPrimaryButton(
                   label: 'Send OTP',
-                  onPressed: controller.isSubmitting.value ? null : controller.sendOtp,
+                  isLoading: controller.isSubmitting.value,
+                  onPressed: controller.sendOtp,
                 ),
               ),
               const SizedBox(height: 24),

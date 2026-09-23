@@ -15,8 +15,69 @@ class FakeConversationService implements ConversationService {
   }
 
   /// Test helper — seeds a conversation directly, bypassing sendScannerMessage.
+  /// Claims an adopted anonymous conversation for a signed-in account.
+  static ConversationSummary _withScannerUid(ConversationSummary s, String uid) {
+    return ConversationSummary(
+      conversationId: s.conversationId,
+      vehicleId: s.vehicleId,
+      ownerUid: s.ownerUid,
+      ownerName: s.ownerName,
+      scannerId: s.scannerId,
+      scannerUid: uid,
+      scannerName: s.scannerName,
+      plateNumber: s.plateNumber,
+      colorName: s.colorName,
+      resolved: s.resolved,
+      unreadForOwner: s.unreadForOwner,
+      unreadForScanner: s.unreadForScanner,
+      unreadCountForOwner: s.unreadCountForOwner,
+      unreadCountForScanner: s.unreadCountForScanner,
+      lastMessagePreview: s.lastMessagePreview,
+      lastMessageAt: s.lastMessageAt,
+    );
+  }
+
+  /// Rebuilds [summary] with explicit unread counters, keeping the legacy
+  /// booleans consistent with them the way the real service does.
+  static ConversationSummary _withCounts(
+    ConversationSummary summary, {
+    required int owner,
+    required int scanner,
+  }) {
+    return ConversationSummary(
+      conversationId: summary.conversationId,
+      vehicleId: summary.vehicleId,
+      ownerUid: summary.ownerUid,
+      ownerName: summary.ownerName,
+      scannerId: summary.scannerId,
+      scannerUid: summary.scannerUid,
+      scannerName: summary.scannerName,
+      plateNumber: summary.plateNumber,
+      colorName: summary.colorName,
+      resolved: summary.resolved,
+      unreadForOwner: owner > 0,
+      unreadForScanner: scanner > 0,
+      unreadCountForOwner: owner,
+      unreadCountForScanner: scanner,
+      lastMessagePreview: summary.lastMessagePreview,
+      lastMessageAt: summary.lastMessageAt,
+    );
+  }
+
+  /// The current stored state of one conversation, for asserting on the
+  /// unread flags directly.
+  ConversationSummary? summaryFor(String conversationId) => _summaries[conversationId];
+
   void seed(ConversationSummary summary, [List<ConversationMessage> messages = const []]) {
-    _summaries[summary.conversationId] = summary;
+    _summaries[summary.conversationId] = _withCounts(
+      summary,
+      owner: summary.unreadCountForOwner > 0
+          ? summary.unreadCountForOwner
+          : (summary.unreadForOwner ? 1 : 0),
+      scanner: summary.unreadCountForScanner > 0
+          ? summary.unreadCountForScanner
+          : (summary.unreadForScanner ? 1 : 0),
+    );
     _messages[summary.conversationId] = List.of(messages);
     _emit();
   }
@@ -62,6 +123,9 @@ class FakeConversationService implements ConversationService {
         colorName: existing.colorName,
         resolved: existing.resolved,
         unreadForOwner: existing.unreadForOwner,
+        unreadForScanner: existing.unreadForScanner,
+        unreadCountForOwner: existing.unreadCountForOwner,
+        unreadCountForScanner: existing.unreadCountForScanner,
         lastMessagePreview: existing.lastMessagePreview,
         lastMessageAt: existing.lastMessageAt,
         scannerUid: uid,
@@ -71,7 +135,10 @@ class FakeConversationService implements ConversationService {
   }
 
   @override
-  Future<ResolvedChat> resolveVehicleAndOpenChat({required String vehicleId}) async {
+  Future<ResolvedChat> resolveVehicleAndOpenChat({
+    required String vehicleId,
+    String? anonymousScannerId,
+  }) async {
     final vehicle = vehicles[vehicleId];
     if (vehicle == null) {
       throw const ResolveVehicleException("This QR code doesn't match a ParkTag vehicle.");
@@ -80,7 +147,23 @@ class FakeConversationService implements ConversationService {
       throw const ResolveVehicleException("This is your own vehicle — nothing to message.");
     }
 
-    final conversationId = conversationIdFor(vehicleId, callerUid);
+    var conversationId = conversationIdFor(vehicleId, callerUid);
+
+    // Mirrors the Cloud Function: a conversation this browser started
+    // anonymously is adopted (history and all) rather than duplicated —
+    // unless it already belongs to a different account.
+    if (anonymousScannerId != null && anonymousScannerId.isNotEmpty) {
+      final anonymousId = conversationIdFor(vehicleId, anonymousScannerId);
+      final anonymous = _summaries[anonymousId];
+      final claimedBySomeoneElse =
+          anonymous?.scannerUid != null && anonymous?.scannerUid != callerUid;
+      if (anonymous != null && !claimedBySomeoneElse) {
+        conversationId = anonymousId;
+        _summaries[anonymousId] = _withScannerUid(anonymous, callerUid);
+        _emit();
+      }
+    }
+
     final existing = _summaries[conversationId];
     if (existing != null) {
       return ResolvedChat(
@@ -105,6 +188,9 @@ class FakeConversationService implements ConversationService {
       colorName: vehicle.colorName,
       resolved: false,
       unreadForOwner: false,
+      unreadForScanner: false,
+      unreadCountForOwner: 0,
+      unreadCountForScanner: 0,
       lastMessagePreview: '',
       lastMessageAt: DateTime.now(),
     );
@@ -135,6 +221,9 @@ class FakeConversationService implements ConversationService {
         colorName: existing.colorName,
         resolved: existing.resolved,
         unreadForOwner: true,
+        unreadForScanner: false,
+        unreadCountForOwner: existing.unreadCountForOwner + 1,
+        unreadCountForScanner: 0,
         lastMessagePreview: text,
         lastMessageAt: DateTime.now(),
       );
@@ -168,6 +257,7 @@ class FakeConversationService implements ConversationService {
     required String text,
   }) async {
     final conversationId = conversationIdFor(vehicleId, scannerId);
+    final existing = _summaries[conversationId];
     _summaries[conversationId] = ConversationSummary(
       conversationId: conversationId,
       vehicleId: vehicleId,
@@ -178,6 +268,9 @@ class FakeConversationService implements ConversationService {
       colorName: colorName,
       resolved: false,
       unreadForOwner: true,
+      unreadForScanner: false,
+      unreadCountForOwner: (existing?.unreadCountForOwner ?? 0) + 1,
+      unreadCountForScanner: 0,
       lastMessagePreview: text,
       lastMessageAt: DateTime.now(),
     );
@@ -203,6 +296,9 @@ class FakeConversationService implements ConversationService {
         colorName: existing.colorName,
         resolved: existing.resolved,
         unreadForOwner: false,
+        unreadForScanner: true,
+        unreadCountForOwner: 0,
+        unreadCountForScanner: existing.unreadCountForScanner + 1,
         lastMessagePreview: text,
         lastMessageAt: DateTime.now(),
       );
@@ -229,6 +325,9 @@ class FakeConversationService implements ConversationService {
       colorName: existing.colorName,
       resolved: resolved,
       unreadForOwner: existing.unreadForOwner,
+      unreadForScanner: existing.unreadForScanner,
+      unreadCountForOwner: existing.unreadCountForOwner,
+      unreadCountForScanner: existing.unreadCountForScanner,
       lastMessagePreview: existing.lastMessagePreview,
       lastMessageAt: existing.lastMessageAt,
     );
@@ -251,6 +350,34 @@ class FakeConversationService implements ConversationService {
       colorName: existing.colorName,
       resolved: existing.resolved,
       unreadForOwner: false,
+      unreadForScanner: existing.unreadForScanner,
+      unreadCountForOwner: 0,
+      unreadCountForScanner: existing.unreadCountForScanner,
+      lastMessagePreview: existing.lastMessagePreview,
+      lastMessageAt: existing.lastMessageAt,
+    );
+    _emit();
+  }
+
+  @override
+  Future<void> markReadByScanner(String conversationId) async {
+    final existing = _summaries[conversationId];
+    if (existing == null) return;
+    _summaries[conversationId] = ConversationSummary(
+      conversationId: existing.conversationId,
+      vehicleId: existing.vehicleId,
+      ownerUid: existing.ownerUid,
+      ownerName: existing.ownerName,
+      scannerId: existing.scannerId,
+      scannerUid: existing.scannerUid,
+      scannerName: existing.scannerName,
+      plateNumber: existing.plateNumber,
+      colorName: existing.colorName,
+      resolved: existing.resolved,
+      unreadForOwner: existing.unreadForOwner,
+      unreadForScanner: false,
+      unreadCountForOwner: existing.unreadCountForOwner,
+      unreadCountForScanner: 0,
       lastMessagePreview: existing.lastMessagePreview,
       lastMessageAt: existing.lastMessageAt,
     );

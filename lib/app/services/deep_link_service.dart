@@ -10,6 +10,7 @@ import '../routes/app_routes.dart';
 import '../utils/vehicle_color.dart';
 import 'auth_service.dart';
 import 'conversation_service.dart';
+import '../widgets/app_snackbar.dart';
 
 /// A vehicle's QR sticker/scan link carries a `vehicleId` that arrived via
 /// a deep link before the app could resolve it — either because the app
@@ -80,7 +81,15 @@ class AppLinksDeepLinkService implements DeepLinkService {
 
   /// Guards against the OS redelivering the same intent/link more than
   /// once (observed on some Android versions on activity re-creation).
+  ///
+  /// Deliberately time-boxed rather than permanent: the *same* sticker is
+  /// legitimately scanned again later in a session (walk back to the same
+  /// blocked car, reopen the same link from a chat), and that must still
+  /// open the chat. Only a redelivery of the identical link within a
+  /// couple of seconds is treated as a duplicate.
   String? _lastHandledUri;
+  DateTime? _lastHandledAt;
+  static const _redeliveryWindow = Duration(seconds: 2);
 
   @override
   Future<void> init() async {
@@ -98,8 +107,14 @@ class AppLinksDeepLinkService implements DeepLinkService {
 
   void _handleUri(Uri uri, {required bool isColdStart}) {
     final uriString = uri.toString();
-    if (_lastHandledUri == uriString) return;
+    final lastAt = _lastHandledAt;
+    if (_lastHandledUri == uriString &&
+        lastAt != null &&
+        DateTime.now().difference(lastAt) < _redeliveryWindow) {
+      return;
+    }
     _lastHandledUri = uriString;
+    _lastHandledAt = DateTime.now();
 
     final segments = uri.pathSegments;
     final scanIndex = segments.indexOf('scan');
@@ -137,11 +152,26 @@ class AppLinksDeepLinkService implements DeepLinkService {
     final uid = authService.currentUid;
     final anonymousScannerId = scan.anonymousScannerId;
     if (anonymousScannerId != null && anonymousScannerId.isNotEmpty && uid != null) {
-      unawaited(conversationService.linkScannerIdentity(scannerId: anonymousScannerId, uid: uid));
+      // Awaited, not fire-and-forget: this claims every conversation this
+      // browser started anonymously — including ones for OTHER vehicles —
+      // so they are already in the resident's "Sent" list by the time the
+      // Inbox renders. Failing to link must not block opening the chat,
+      // which the backend adopts on its own below.
+      try {
+        await conversationService.linkScannerIdentity(scannerId: anonymousScannerId, uid: uid);
+      } catch (_) {
+        // Non-fatal — the conversation for THIS vehicle is still adopted
+        // by resolveVehicleAndOpenChat.
+      }
     }
 
     try {
-      final result = await conversationService.resolveVehicleAndOpenChat(vehicleId: scan.vehicleId);
+      final result = await conversationService.resolveVehicleAndOpenChat(
+        vehicleId: scan.vehicleId,
+        // Lets the backend reopen the web conversation rather than
+        // starting an empty parallel one.
+        anonymousScannerId: anonymousScannerId,
+      );
       Get.toNamed(
         AppRoutes.chatThread,
         arguments: MessageThreadModel(
@@ -157,9 +187,9 @@ class AppLinksDeepLinkService implements DeepLinkService {
         ),
       );
     } on ResolveVehicleException catch (e) {
-      Get.snackbar('Could not open chat', e.message);
+      AppSnackbar.show('Could not open chat', e.message);
     } catch (_) {
-      Get.snackbar('Could not open chat', 'Please try scanning again.');
+      AppSnackbar.show('Could not open chat', 'Please try scanning again.');
     }
   }
 

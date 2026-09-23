@@ -51,6 +51,22 @@
                 <data android:scheme="https" android:host="car-ping-9d4f8.web.app" android:pathPrefix="/scan"/>
             </intent-filter>
         </activity>
+        <!-- FCM display configuration. Without these, a push that FCM
+             reports as successfully delivered can still fail to appear:
+             Android 8+ drops a notification whose channel does not exist,
+             and with no icon the system flattens the launcher icon into an
+             unrecognisable white square. The channel itself is created in
+             MainActivity.kt and its id must match this value. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="parktag_messages" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

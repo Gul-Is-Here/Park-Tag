@@ -6,9 +6,9 @@ import 'package:get/get.dart';
 import '../../firebase_options.dart';
 import '../../modules/dashboard/models/message_thread_model.dart';
 import '../routes/app_routes.dart';
-import '../theme/app_colors.dart';
 import '../utils/vehicle_color.dart';
 import 'auth_service.dart';
+import '../widgets/app_snackbar.dart';
 
 /// Runs in a separate isolate for background/terminated-app messages, so it
 /// must be a top-level (or static) function, and re-initializes Firebase
@@ -29,6 +29,14 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// the right Chat thread.
 abstract class PushNotificationService {
   Future<void> init();
+
+  /// Whether the resident has actually granted notification permission.
+  ///
+  /// Worth surfacing because a denial is invisible from the server side:
+  /// FCM still reports a push as successfully delivered to the device, and
+  /// Android simply never displays it. Without this, "no notifications"
+  /// looks identical to a broken token.
+  Future<bool> hasPermission();
 
   /// Fetches this device's current FCM token and saves it to the signed-in
   /// resident's profile. Call after sign-in/sign-up, and again on app start
@@ -61,8 +69,22 @@ class FirebasePushNotificationService implements PushNotificationService {
     // anonymous anyway (nothing to notify) — mobile only, for now.
     if (kIsWeb) return;
 
-    await _messaging.requestPermission(alert: true, badge: true, sound: true);
+    final settings = await _messaging.requestPermission(alert: true, badge: true, sound: true);
     await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+
+    // Android 13+ and iOS both require the resident to accept this prompt.
+    // If they decline, every push still leaves the server "successfully
+    // delivered" and is then dropped by the OS, so log it plainly rather
+    // than letting it look like a backend problem.
+    if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+        settings.authorizationStatus != AuthorizationStatus.provisional) {
+      debugPrint(
+        'PushNotificationService: notifications NOT permitted '
+        '(${settings.authorizationStatus.name}). Pushes will be delivered to '
+        'the device and silently discarded until this is granted in system '
+        'settings.',
+      );
+    }
 
     _messaging.onTokenRefresh.listen((token) {
       _currentToken = token;
@@ -86,14 +108,26 @@ class FirebasePushNotificationService implements PushNotificationService {
   }
 
   @override
+  Future<bool> hasPermission() async {
+    if (kIsWeb) return false;
+    final settings = await _messaging.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  @override
   Future<void> syncToken() async {
     if (kIsWeb) return;
     final uid = _authService.currentUid;
     if (uid == null) return;
     final token = await _messaging.getToken();
-    if (token == null) return;
+    if (token == null) {
+      debugPrint('PushNotificationService: getToken() returned null — no token to save.');
+      return;
+    }
     _currentToken = token;
     await _authService.saveFcmToken(uid: uid, token: token);
+    debugPrint('PushNotificationService: saved FCM token for $uid (…${token.substring(token.length - 8)}).');
   }
 
   @override
@@ -115,11 +149,17 @@ class FirebasePushNotificationService implements PushNotificationService {
   void _showForegroundBanner(RemoteMessage message) {
     final thread = _threadFromMessage(message);
     if (thread == null) return;
-    Get.snackbar(
+    // Colours come from AppSnackbar now — every snackbar in the app is
+    // brand yellow with black text. Only the tap behaviour is per-call.
+    // Shown at the TOP: this is an incoming-message alert, not feedback on
+    // something the resident just did on screen (which is what the bottom
+    // position is for) — it needs to read like a notification, not get
+    // lost near whatever they're doing at the bottom of the screen (e.g.
+    // typing in another chat's composer).
+    AppSnackbar.show(
       message.notification?.title ?? 'New message',
       message.notification?.body ?? thread.lastMessagePreview,
-      backgroundColor: AppColors.surface,
-      colorText: AppColors.ink,
+      position: SnackPosition.TOP,
       onTap: (_) => Get.toNamed(AppRoutes.chatThread, arguments: thread),
     );
   }

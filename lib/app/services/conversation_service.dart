@@ -22,6 +22,9 @@ class ConversationSummary {
     required this.colorName,
     required this.resolved,
     required this.unreadForOwner,
+    this.unreadForScanner = false,
+    this.unreadCountForOwner = 0,
+    this.unreadCountForScanner = 0,
     required this.lastMessagePreview,
     required this.lastMessageAt,
     this.scannerUid,
@@ -43,7 +46,26 @@ class ConversationSummary {
   final String plateNumber;
   final String colorName;
   final bool resolved;
+  /// Unread *for the owner* — set when the scanner writes, cleared when
+  /// the owner opens the thread.
   final bool unreadForOwner;
+
+  /// The mirror image, for whoever scanned the sticker. Each side has its
+  /// own flag: a single shared one would mean the owner reading a thread
+  /// also marked it read for the scanner.
+  final bool unreadForScanner;
+
+  /// How many messages the owner has not read yet. Incremented on each
+  /// scanner message, zeroed when the owner opens the thread.
+  ///
+  /// The booleans above are kept in sync rather than replaced: documents
+  /// written before these counters existed have no count field, and the
+  /// public web page and security rules still read the flags.
+  final int unreadCountForOwner;
+
+  /// The scanner's side of [unreadCountForOwner].
+  final int unreadCountForScanner;
+
   final String lastMessagePreview;
   final DateTime? lastMessageAt;
 
@@ -123,7 +145,14 @@ abstract class ConversationService {
   /// Never trust a client-supplied owner identity; the backend resolves
   /// it. Throws [ResolveVehicleException] with a display-ready message on
   /// failure (invalid vehicle, scanning your own car, not signed in).
-  Future<ResolvedChat> resolveVehicleAndOpenChat({required String vehicleId});
+  /// [anonymousScannerId], when present, is the random id this person's
+  /// browser used on the public Scan Contact Page before they had an
+  /// account. Passing it lets the backend adopt that existing conversation
+  /// — with its history — instead of opening a fresh empty one (FR-09).
+  Future<ResolvedChat> resolveVehicleAndOpenChat({
+    required String vehicleId,
+    String? anonymousScannerId,
+  });
 
   /// Called from the public Scan Contact Page. Creates this scanner's
   /// conversation on first contact (or reopens a resolved one) and appends
@@ -156,6 +185,11 @@ abstract class ConversationService {
   Future<void> setResolved({required String conversationId, required bool resolved});
 
   Future<void> markReadByOwner(String conversationId);
+
+  /// The scanner's side of [markReadByOwner] — called when whoever scanned
+  /// the sticker actually opens the thread, in the app or on the public
+  /// Scan Contact Page.
+  Future<void> markReadByScanner(String conversationId);
 }
 
 class FirebaseConversationService implements ConversationService {
@@ -188,10 +222,17 @@ class FirebaseConversationService implements ConversationService {
   }
 
   @override
-  Future<ResolvedChat> resolveVehicleAndOpenChat({required String vehicleId}) async {
+  Future<ResolvedChat> resolveVehicleAndOpenChat({
+    required String vehicleId,
+    String? anonymousScannerId,
+  }) async {
     try {
       final callable = FirebaseFunctions.instance.httpsCallable('resolveVehicleAndOpenChat');
-      final result = await callable.call({'vehicleId': vehicleId});
+      final result = await callable.call({
+        'vehicleId': vehicleId,
+        if (anonymousScannerId != null && anonymousScannerId.isNotEmpty)
+          'scannerId': anonymousScannerId,
+      });
       final data = Map<String, dynamic>.from(result.data as Map);
       return ResolvedChat(
         conversationId: data['conversationId'] as String,
@@ -248,6 +289,9 @@ class FirebaseConversationService implements ConversationService {
       'lastMessagePreview': text,
       'lastMessageAt': FieldValue.serverTimestamp(),
       'unreadForOwner': true,
+      'unreadForScanner': false,
+      'unreadCountForOwner': FieldValue.increment(1),
+      'unreadCountForScanner': 0,
       'resolved': false,
     }, SetOptions(merge: true));
     await docRef.collection('messages').add({
@@ -264,6 +308,9 @@ class FirebaseConversationService implements ConversationService {
       'lastMessagePreview': text,
       'lastMessageAt': FieldValue.serverTimestamp(),
       'unreadForOwner': false,
+      'unreadForScanner': true,
+      'unreadCountForOwner': 0,
+      'unreadCountForScanner': FieldValue.increment(1),
     }, SetOptions(merge: true));
     await docRef.collection('messages').add({
       'sender': 'owner',
@@ -279,6 +326,9 @@ class FirebaseConversationService implements ConversationService {
       'lastMessagePreview': text,
       'lastMessageAt': FieldValue.serverTimestamp(),
       'unreadForOwner': true,
+      'unreadForScanner': false,
+      'unreadCountForOwner': FieldValue.increment(1),
+      'unreadCountForScanner': 0,
     }, SetOptions(merge: true));
     await docRef.collection('messages').add({
       'sender': 'scanner',
@@ -294,7 +344,27 @@ class FirebaseConversationService implements ConversationService {
 
   @override
   Future<void> markReadByOwner(String conversationId) {
-    return _conversations.doc(conversationId).set({'unreadForOwner': false}, SetOptions(merge: true));
+    return _conversations.doc(conversationId).set({
+      'unreadForOwner': false,
+      'unreadCountForOwner': 0,
+    }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> markReadByScanner(String conversationId) {
+    return _conversations.doc(conversationId).set({
+      'unreadForScanner': false,
+      'unreadCountForScanner': 0,
+    }, SetOptions(merge: true));
+  }
+
+  /// A conversation last written before the counters existed has only the
+  /// boolean. Fall back to it so those threads still show "1" rather than
+  /// silently losing their unread badge.
+  static int _unreadCount(Map<String, dynamic> data, String countKey, String flagKey) {
+    final count = data[countKey];
+    if (count is int) return count < 0 ? 0 : count;
+    return (data[flagKey] as bool? ?? false) ? 1 : 0;
   }
 
   ConversationSummary _toSummary(String id, Map<String, dynamic> data) {
@@ -307,6 +377,11 @@ class FirebaseConversationService implements ConversationService {
       colorName: data['colorName'] as String? ?? '',
       resolved: data['resolved'] as bool? ?? false,
       unreadForOwner: data['unreadForOwner'] as bool? ?? false,
+      // Absent on conversations created before this field existed, which
+      // correctly reads as "nothing unread" rather than a false badge.
+      unreadForScanner: data['unreadForScanner'] as bool? ?? false,
+      unreadCountForOwner: _unreadCount(data, 'unreadCountForOwner', 'unreadForOwner'),
+      unreadCountForScanner: _unreadCount(data, 'unreadCountForScanner', 'unreadForScanner'),
       lastMessagePreview: data['lastMessagePreview'] as String? ?? '',
       lastMessageAt: (data['lastMessageAt'] as Timestamp?)?.toDate(),
       scannerUid: data['scannerUid'] as String?,

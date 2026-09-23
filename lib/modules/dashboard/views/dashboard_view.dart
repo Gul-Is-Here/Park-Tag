@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/bound_view.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/dashboard_bottom_nav.dart';
 import 'home_tab_view.dart';
 import 'inbox_view.dart';
 import 'profile_view.dart';
 
-class DashboardView extends GetView<DashboardController> {
+class DashboardView extends BoundView<DashboardController> {
   const DashboardView({super.key});
 
   static const _tabs = [HomeTabView(), InboxView(), ProfileView()];
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildWith(BuildContext context, DashboardController controller) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -35,6 +36,9 @@ class DashboardView extends GetView<DashboardController> {
       bottomNavigationBar: Obx(
         () => DashboardBottomNav(
           selectedIndex: controller.tabIndex.value,
+          // tabIndex above is always observable, so this Obx is valid even
+          // when the Inbox controller (and therefore the count) is absent.
+          unreadCount: controller.hasUnreadSource ? controller.unreadMessageCount : 0,
           onTap: controller.changeTab,
         ),
       ),

@@ -10,8 +10,10 @@ import '../../../app/services/conversation_service.dart';
 import '../../../app/services/deep_link_service.dart';
 import '../../../app/services/vehicle_service.dart';
 import '../../../app/utils/vehicle_color.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 const _scannerIdPrefsKey = 'parktag_scanner_id';
+const _preferWebPrefsKey = 'parktag_prefer_web';
 
 /// Drives the public Scan Contact Page (FR-04) — opened straight from a
 /// vehicle's QR sticker, no sign-in required.
@@ -59,6 +61,11 @@ class ScanContactController extends GetxController {
   /// reopens this same web page. Null until the scannerId is loaded.
   final appLinkUrl = Rxn<String>();
 
+  /// True once this visitor has explicitly chosen "Continue on Web". The
+  /// choice sticks across reloads so the handoff banner asks once rather
+  /// than on every scan of the same sticker.
+  final prefersWeb = false.obs;
+
   StreamSubscription<List<ConversationMessage>>? _messagesSub;
   StreamSubscription<ConversationSummary?>? _metaSub;
 
@@ -84,6 +91,7 @@ class ScanContactController extends GetxController {
       }
 
       _scannerId = await _loadOrCreateScannerId();
+      prefersWeb.value = (await SharedPreferences.getInstance()).getBool(_preferWebPrefsKey) ?? false;
 
       _ownerUid = data['ownerUid'] as String? ?? '';
       ownerName.value = data['ownerName'] as String? ?? 'A ParkTag resident';
@@ -102,6 +110,13 @@ class ScanContactController extends GetxController {
         if (summary != null) {
           resolved.value = summary.resolved;
           hasConversation.value = true;
+          // This page IS the scanner reading the thread, so an owner reply
+          // arriving while it is open is genuinely read. Clearing it here
+          // rather than on load also covers the reply that lands while the
+          // visitor is sitting on the page.
+          if (summary.unreadForScanner) {
+            _conversationService.markReadByScanner(conversationId);
+          }
         }
       });
 
@@ -154,7 +169,7 @@ class ScanContactController extends GetxController {
       );
       messageController.clear();
     } catch (_) {
-      Get.snackbar('Could not send', 'Something went wrong. Please try again.');
+      AppSnackbar.show('Could not send', 'Something went wrong. Please try again.');
     } finally {
       isSending.value = false;
     }
@@ -174,7 +189,18 @@ class ScanContactController extends GetxController {
   Future<void> openApp() async {
     final url = appLinkUrl.value;
     if (url == null) return;
+    // externalApplication is what gives the OS the chance to intercept this
+    // as a verified App Link / Universal Link and hand it to the installed
+    // app. Without the app, it simply reopens this page.
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  /// "Continue on Web" — the visitor stays on this page and is not asked
+  /// again. Never force the app open on someone who declined it.
+  Future<void> dismissAppHandoff() async {
+    prefersWeb.value = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_preferWebPrefsKey, true);
   }
 
   @override

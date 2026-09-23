@@ -5,6 +5,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
 import '../../../app/services/push_notification_service.dart';
 import '../widgets/delete_account_dialog.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class ProfileController extends GetxController {
   final _authService = Get.find<AuthService>();
@@ -17,11 +18,29 @@ class ProfileController extends GetxController {
   final isLoading = true.obs;
   final isSaving = false.obs;
 
+  /// False if the resident denied (or has not yet granted) notification
+  /// permission — surfaced so "no notifications" is visibly explained
+  /// rather than looking identical to a delivery failure. FCM still
+  /// reports a push as sent to a device with this off; the OS just never
+  /// shows it.
+  final notificationsPermitted = true.obs;
+
   @override
   void onReady() {
     super.onReady();
     _loadProfile();
+    _checkNotificationPermission();
   }
+
+  Future<void> _checkNotificationPermission() async {
+    notificationsPermitted.value = await _pushService.hasPermission();
+  }
+
+  /// Re-checks after the resident may have granted it from system
+  /// settings (there is no in-app deep link to that screen yet — Android's
+  /// notification-settings intent needs the `app_settings` package, which
+  /// isn't a project dependency; adding it is a separate, deliberate call).
+  Future<void> recheckNotificationPermission() => _checkNotificationPermission();
 
   Future<void> _loadProfile() async {
     phoneNumber.value = _authService.currentPhone ?? '';
@@ -40,7 +59,7 @@ class ProfileController extends GetxController {
 
   Future<void> save() async {
     if (name.text.trim().isEmpty) {
-      Get.snackbar('Name required', 'Please enter your full name.');
+      AppSnackbar.show('Name required', 'Please enter your full name.');
       return;
     }
     final uid = _authService.currentUid;
@@ -49,14 +68,14 @@ class ProfileController extends GetxController {
     isSaving.value = true;
     await _authService.updateResidentProfile(uid: uid, name: name.text.trim());
     isSaving.value = false;
-    Get.snackbar('Profile updated', 'Your details have been saved.');
+    AppSnackbar.show('Profile updated', 'Your details have been saved.');
   }
 
   Future<void> logout() async {
     await _pushService.unregisterToken();
     await _authService.signOut();
     Get.offAllNamed(AppRoutes.login);
-    Get.snackbar('Logged out', "You've been signed out of ParkTag.");
+    AppSnackbar.show('Logged out', "You've been signed out of ParkTag.");
   }
 
   Future<void> deleteAccount() async {
@@ -70,7 +89,7 @@ class ProfileController extends GetxController {
     }
     await _authService.signOut();
     Get.offAllNamed(AppRoutes.login);
-    Get.snackbar('Account deleted', 'All your data has been removed.');
+    AppSnackbar.show('Account deleted', 'All your data has been removed.');
   }
 
   @override

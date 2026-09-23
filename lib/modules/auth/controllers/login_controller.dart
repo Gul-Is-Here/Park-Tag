@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
+import '../../../app/widgets/app_snackbar.dart';
 
 class LoginController extends GetxController {
   final phone = TextEditingController();
@@ -14,7 +15,7 @@ class LoginController extends GetxController {
 
   Future<void> sendOtp() async {
     if (!_isPhoneValid) {
-      Get.snackbar('Check your number', 'Enter your 10-digit phone number.');
+      AppSnackbar.show('Check your number', 'Enter your 10-digit phone number.');
       return;
     }
 
@@ -26,7 +27,7 @@ class LoginController extends GetxController {
     final registered = await _authService.phoneIsRegistered(e164Phone);
     if (!registered) {
       isSubmitting.value = false;
-      Get.snackbar('No account found', 'This number is not registered yet — please sign up first.');
+      AppSnackbar.show('No account found', 'This number is not registered yet — please sign up first.');
       return;
     }
 
@@ -45,7 +46,7 @@ class LoginController extends GetxController {
       },
       onError: (message) {
         isSubmitting.value = false;
-        Get.snackbar('Could not send code', message);
+        AppSnackbar.show('Could not send code', message);
       },
     );
   }

@@ -5,13 +5,30 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../dashboard/models/chat_message_model.dart';
 
 class ChatBubble extends StatelessWidget {
-  const ChatBubble({super.key, required this.message});
+  const ChatBubble({
+    super.key,
+    required this.message,
+    this.isOutgoing = false,
+    this.showTail = true,
+    this.onRetry,
+  });
 
   final ChatMessageModel message;
 
+  /// Whether this message was sent by the person looking at the screen.
+  /// Not the same as "from the owner": the scanner side of a conversation
+  /// sees their own messages on the right too.
+  final bool isOutgoing;
+
+  /// False for a message in the middle of a run from the same sender —
+  /// grouped messages drop the timestamp row and the bubble's tail.
+  final bool showTail;
+
+  final VoidCallback? onRetry;
+
   @override
   Widget build(BuildContext context) {
-    final isOwner = message.sender == ChatSender.owner;
+    final isOwner = isOutgoing;
 
     return Align(
       alignment: isOwner ? Alignment.centerRight : Alignment.centerLeft,
@@ -21,20 +38,55 @@ class ChatBubble extends StatelessWidget {
           crossAxisAlignment: isOwner ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             _buildContent(isOwner),
-            const SizedBox(height: 4),
-            Padding(
-              padding: EdgeInsets.only(left: isOwner ? 0 : 4, right: isOwner ? 4 : 0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(message.timeLabel, style: AppTextStyles.caption.copyWith(color: AppColors.faint, fontSize: 11)),
-                  if (isOwner) ...[
-                    const SizedBox(width: 4),
-                    const Icon(Icons.done_all, size: 13, color: AppColors.yellow),
+            if (showTail || message.status != ChatMessageStatus.sent) ...[
+              const SizedBox(height: 4),
+              Padding(
+                padding: EdgeInsets.only(left: isOwner ? 0 : 4, right: isOwner ? 4 : 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      message.timeLabel,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.faint, fontSize: 11),
+                    ),
+                    // Outgoing messages show only what the backend can
+                    // actually confirm: in flight, written, or failed.
+                    // There is no delivery or read receipt in the schema,
+                    // so no double-tick is shown.
+                    if (isOwner) ...[
+                      const SizedBox(width: 5),
+                      switch (message.status) {
+                        ChatMessageStatus.sending => const SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.4, color: AppColors.faint),
+                        ),
+                        ChatMessageStatus.sent => const Icon(Icons.check, size: 13, color: AppColors.faint),
+                        ChatMessageStatus.failed => const Icon(
+                          Icons.error_outline,
+                          size: 13,
+                          color: Color(0xFFE0736B),
+                        ),
+                      },
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
+            if (message.status == ChatMessageStatus.failed) ...[
+              const SizedBox(height: 3),
+              GestureDetector(
+                onTap: onRetry,
+                child: Text(
+                  'Not sent · Tap to retry',
+                  style: AppTextStyles.caption.copyWith(
+                    color: const Color(0xFFE0736B),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -42,11 +94,12 @@ class ChatBubble extends StatelessWidget {
   }
 
   Widget _buildContent(bool isOwner) {
+    final tail = showTail ? const Radius.circular(4) : const Radius.circular(16);
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(16),
       topRight: const Radius.circular(16),
-      bottomLeft: Radius.circular(isOwner ? 16 : 4),
-      bottomRight: Radius.circular(isOwner ? 4 : 16),
+      bottomLeft: isOwner ? const Radius.circular(16) : tail,
+      bottomRight: isOwner ? tail : const Radius.circular(16),
     );
 
     switch (message.kind) {
