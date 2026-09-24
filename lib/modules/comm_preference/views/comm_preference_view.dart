@@ -111,12 +111,12 @@ class _PreferenceCard extends StatelessWidget {
                 ),
               ),
               isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.yellow),
                     )
-                  : const Icon(Icons.chevron_right, color: AppColors.muted),
+                  : Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),

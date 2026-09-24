@@ -71,7 +71,7 @@ class QrScannerView extends GetView<QrScannerController> {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 22,
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.yellow),
@@ -174,7 +174,7 @@ class _CameraError extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.no_photography_outlined, size: 40, color: AppColors.faint),
+          Icon(Icons.no_photography_outlined, size: 40, color: AppColors.faint),
           const SizedBox(height: 16),
           Text(
             message,

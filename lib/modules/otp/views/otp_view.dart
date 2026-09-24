@@ -16,94 +16,116 @@ class OtpView extends GetView<OtpController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: Get.back,
-                    icon: const Icon(Icons.arrow_back, color: AppColors.ink),
-                    padding: EdgeInsets.zero,
-                  ),
-                ],
+        // Scrollable so the keyboard can't overflow the layout; the
+        // min-height + IntrinsicHeight keep the Spacer pinning the bottom
+        // link to the foot of the screen whenever there IS room.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - 40,
               ),
-              const SizedBox(height: 16),
-              const AuthBrandMark(),
-              const SizedBox(height: 56),
-              Text(
-                'Verify your number',
-                style: AppTextStyles.headingLg.copyWith(color: AppColors.ink),
-              ),
-              const SizedBox(height: 8),
-              Text.rich(
-                TextSpan(
-                  style: AppTextStyles.subtitle.copyWith(color: AppColors.muted),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const TextSpan(text: "Enter the 6-digit code we sent to "),
-                    TextSpan(
-                      text: '+92 ${controller.phone}',
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.w700,
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: Get.back,
+                          icon: Icon(Icons.arrow_back, color: AppColors.ink),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const AuthBrandMark(),
+                    const SizedBox(height: 56),
+                    Text(
+                      'Verify your number',
+                      style: AppTextStyles.headingLg.copyWith(
                         color: AppColors.ink,
                       ),
                     ),
-                    const TextSpan(text: '.'),
+                    const SizedBox(height: 8),
+                    Text.rich(
+                      TextSpan(
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: AppColors.muted,
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: "Enter the 6-digit code we sent to ",
+                          ),
+                          TextSpan(
+                            text: '+92 ${controller.phone}',
+                            style: AppTextStyles.subtitle.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          const TextSpan(text: '.'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(
+                        OtpController.codeLength,
+                        (i) => OtpDigitBox(
+                          controller: controller.digitControllers[i],
+                          focusNode: controller.focusNodes[i],
+                          onChanged: (value) =>
+                              controller.onDigitChanged(i, value),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Obx(
+                      () => AuthPrimaryButton(
+                        label: 'Verify',
+                        isLoading: controller.isVerifying.value,
+                        onPressed: controller.verify,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Obx(
+                        () => controller.canResend
+                            ? GestureDetector(
+                                onTap: controller.resend,
+                                child: Text(
+                                  'Resend code',
+                                  style: AppTextStyles.linkTextEmphasis
+                                      .copyWith(color: AppColors.yellow),
+                                ),
+                              )
+                            : Text(
+                                'Resend code in 0:${controller.secondsRemaining.value.toString().padLeft(2, '0')}',
+                                style: AppTextStyles.linkText.copyWith(
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Center(
+                      child: GestureDetector(
+                        onTap: Get.back,
+                        child: Text(
+                          'Wrong number? Go back',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.faint,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(
-                  OtpController.codeLength,
-                  (i) => OtpDigitBox(
-                    controller: controller.digitControllers[i],
-                    focusNode: controller.focusNodes[i],
-                    onChanged: (value) => controller.onDigitChanged(i, value),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Obx(
-                () => AuthPrimaryButton(
-                  label: 'Verify',
-                  isLoading: controller.isVerifying.value,
-                  onPressed: controller.verify,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: Obx(
-                  () => controller.canResend
-                      ? GestureDetector(
-                          onTap: controller.resend,
-                          child: Text(
-                            'Resend code',
-                            style: AppTextStyles.linkTextEmphasis.copyWith(
-                              color: AppColors.yellow,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          'Resend code in 0:${controller.secondsRemaining.value.toString().padLeft(2, '0')}',
-                          style: AppTextStyles.linkText.copyWith(color: AppColors.muted),
-                        ),
-                ),
-              ),
-              const Spacer(),
-              Center(
-                child: GestureDetector(
-                  onTap: Get.back,
-                  child: Text(
-                    'Wrong number? Go back',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.faint),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

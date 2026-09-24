@@ -36,7 +36,7 @@ class VehicleCard extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: hasUnread ? AppColors.yellow.withValues(alpha: 0.5) : const Color(0xFF2E2E29),
+              color: hasUnread ? AppColors.yellow.withValues(alpha: 0.5) : AppColors.border,
             ),
             boxShadow: [
               BoxShadow(
@@ -116,7 +116,7 @@ class _PlateChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: const Color(0xFF2E2E29)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -127,7 +127,7 @@ class _PlateChip extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: vehicle.color,
-                border: Border.all(color: const Color(0xFF3A3A34)),
+                border: Border.all(color: AppColors.border),
               ),
             ),
             const SizedBox(width: 7),

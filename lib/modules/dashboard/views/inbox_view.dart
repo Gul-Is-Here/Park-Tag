@@ -172,11 +172,11 @@ class _SearchField extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2E2E29)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, size: 18, color: AppColors.faint),
+          Icon(Icons.search, size: 18, color: AppColors.faint),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -244,7 +244,7 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? AppColors.yellow : AppColors.surface,
           borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: selected ? AppColors.yellow : const Color(0xFF2E2E29)),
+          border: Border.all(color: selected ? AppColors.yellow : AppColors.border),
         ),
         child: Text(
           label,
@@ -273,9 +273,9 @@ class _CircleAction extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF2A2210) : AppColors.surface,
+          color: active ? Color(0xFF2A2210) : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: active ? AppColors.yellow.withValues(alpha: 0.35) : const Color(0xFF2E2E29)),
+          border: Border.all(color: active ? AppColors.yellow.withValues(alpha: 0.35) : AppColors.border),
         ),
         child: Icon(icon, size: 18, color: active ? AppColors.yellow : AppColors.muted),
       ),
@@ -384,7 +384,7 @@ class _SkeletonCardState extends State<_SkeletonCard> with SingleTickerProviderS
           width: width,
           height: height,
           decoration: BoxDecoration(
-            color: const Color(0xFF33332E).withValues(alpha: v),
+            color: AppColors.border.withValues(alpha: v),
             borderRadius: BorderRadius.circular(6),
           ),
         );
@@ -394,7 +394,7 @@ class _SkeletonCardState extends State<_SkeletonCard> with SingleTickerProviderS
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF2A2A26)),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,7 +403,7 @@ class _SkeletonCardState extends State<_SkeletonCard> with SingleTickerProviderS
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF33332E).withValues(alpha: v),
+                  color: AppColors.border.withValues(alpha: v),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -505,7 +505,7 @@ class _StateBlock extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.surface,
-              border: Border.all(color: const Color(0xFF2E2E29)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Icon(icon, size: 30, color: AppColors.faint),
           ),

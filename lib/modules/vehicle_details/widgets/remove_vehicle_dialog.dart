@@ -51,7 +51,7 @@ class _RemoveVehicleDialogState extends State<RemoveVehicleDialog> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF33332E), width: 1.5),
+          side: BorderSide(color: AppColors.border, width: 1.5),
         ),
         title: Text('Remove vehicle?', style: AppTextStyles.headingSm.copyWith(color: AppColors.ink)),
         content: Column(

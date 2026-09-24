@@ -78,7 +78,7 @@ class OnboardingView extends GetView<OnboardingController> {
                           style: AppTextStyles.buttonLabel.copyWith(color: AppColors.background, fontSize: 15.5),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward, size: 16, color: AppColors.background),
+                        Icon(Icons.arrow_forward, size: 16, color: AppColors.background),
                       ],
                     ),
                   ),

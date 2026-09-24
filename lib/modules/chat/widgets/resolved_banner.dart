@@ -20,8 +20,8 @@ class ResolvedBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF262622))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -29,7 +29,7 @@ class ResolvedBanner extends StatelessWidget {
             child: Text(
               isResolved ? 'Marked as resolved' : 'Has this issue been resolved?',
               style: AppTextStyles.subtitle.copyWith(
-                color: isResolved ? const Color(0xFF7FBF7F) : AppColors.ink,
+                color: isResolved ? AppColors.success : AppColors.ink,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -51,16 +51,16 @@ class ResolvedBanner extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF182018),
+                      color: AppColors.successSurface,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF2A3D2A)),
+                      border: Border.all(color: AppColors.successBorder),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check, size: 13, color: Color(0xFF7FBF7F)),
+                        Icon(Icons.check, size: 13, color: AppColors.success),
                         const SizedBox(width: 5),
-                        Text('Resolved', style: AppTextStyles.label.copyWith(color: const Color(0xFF7FBF7F), letterSpacing: 0)),
+                        Text('Resolved', style: AppTextStyles.label.copyWith(color: AppColors.success, letterSpacing: 0)),
                       ],
                     ),
                   ),
@@ -73,12 +73,12 @@ class ResolvedBanner extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF33332E)),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.close, size: 13, color: AppColors.muted),
+                        Icon(Icons.close, size: 13, color: AppColors.muted),
                         const SizedBox(width: 5),
                         Text('Not yet', style: AppTextStyles.label.copyWith(color: AppColors.muted, letterSpacing: 0)),
                       ],

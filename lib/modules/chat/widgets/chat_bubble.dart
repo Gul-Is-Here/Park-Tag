@@ -56,12 +56,12 @@ class ChatBubble extends StatelessWidget {
                     if (isOwner) ...[
                       const SizedBox(width: 5),
                       switch (message.status) {
-                        ChatMessageStatus.sending => const SizedBox(
+                        ChatMessageStatus.sending => SizedBox(
                           width: 10,
                           height: 10,
                           child: CircularProgressIndicator(strokeWidth: 1.4, color: AppColors.faint),
                         ),
-                        ChatMessageStatus.sent => const Icon(Icons.check, size: 13, color: AppColors.faint),
+                        ChatMessageStatus.sent => Icon(Icons.check, size: 13, color: AppColors.faint),
                         ChatMessageStatus.failed => const Icon(
                           Icons.error_outline,
                           size: 13,
@@ -109,7 +109,7 @@ class ChatBubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: isOwner ? AppColors.yellow : AppColors.surface,
             borderRadius: radius,
-            border: isOwner ? null : Border.all(color: const Color(0xFF33332E), width: 1.5),
+            border: isOwner ? null : Border.all(color: AppColors.border, width: 1.5),
           ),
           child: Text(
             message.text,
@@ -127,7 +127,7 @@ class ChatBubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: isOwner ? AppColors.yellow : AppColors.surface,
             borderRadius: radius,
-            border: isOwner ? null : Border.all(color: const Color(0xFF33332E), width: 1.5),
+            border: isOwner ? null : Border.all(color: AppColors.border, width: 1.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -136,7 +136,7 @@ class ChatBubble extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: isOwner ? AppColors.background : const Color(0xFF2A2210),
+                  color: isOwner ? AppColors.background : Color(0xFF2A2210),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.play_arrow, size: 15, color: isOwner ? AppColors.yellow : AppColors.yellow),
@@ -161,14 +161,14 @@ class ChatBubble extends StatelessWidget {
             width: 160,
             height: 120,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF2A2A26), Color(0xFF1B1B18)],
+                colors: [AppColors.border, Color(0xFF1B1B18)],
               ),
-              border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+              border: Border.all(color: AppColors.border, width: 1.5),
             ),
-            child: const Icon(Icons.image_outlined, size: 26, color: AppColors.faint),
+            child: Icon(Icons.image_outlined, size: 26, color: AppColors.faint),
           ),
         );
     }

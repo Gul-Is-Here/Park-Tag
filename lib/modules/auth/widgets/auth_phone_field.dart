@@ -27,7 +27,7 @@ class AuthPhoneField extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+            border: Border.all(color: AppColors.border, width: 1.5),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -37,7 +37,7 @@ class AuthPhoneField extends StatelessWidget {
                 style: AppTextStyles.phoneValue.copyWith(color: AppColors.ink),
               ),
               const SizedBox(width: 10),
-              Container(width: 1, height: 22, color: const Color(0xFF33332E)),
+              Container(width: 1, height: 22, color: AppColors.border),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(

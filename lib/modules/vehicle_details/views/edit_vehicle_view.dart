@@ -34,9 +34,9 @@ class EditVehicleView extends GetView<EditVehicleController> {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                        border: Border.all(color: AppColors.border, width: 1.5),
                       ),
-                      child: const Icon(Icons.arrow_back, color: AppColors.ink, size: 18),
+                      child: Icon(Icons.arrow_back, color: AppColors.ink, size: 18),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -108,7 +108,7 @@ class EditVehicleView extends GetView<EditVehicleController> {
                       hint: '14 Mar 2022',
                       readOnly: true,
                       onTap: () => controller.pickRegistrationDate(context),
-                      suffixIcon: const Icon(
+                      suffixIcon: Icon(
                         Icons.calendar_today_outlined,
                         size: 17,
                         color: AppColors.muted,
@@ -232,12 +232,12 @@ class EditVehicleView extends GetView<EditVehicleController> {
           children: [
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined, color: AppColors.yellow),
+              leading: Icon(Icons.photo_camera_outlined, color: AppColors.yellow),
               title: Text('Take a photo', style: AppTextStyles.fieldValue.copyWith(color: AppColors.ink)),
               onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: AppColors.yellow),
+              leading: Icon(Icons.photo_library_outlined, color: AppColors.yellow),
               title: Text('Choose from gallery', style: AppTextStyles.fieldValue.copyWith(color: AppColors.ink)),
               onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
             ),

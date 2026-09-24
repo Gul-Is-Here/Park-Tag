@@ -74,7 +74,7 @@ class ShimmerBox extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment(-1.6 + (t * 3.2), 0),
           end: Alignment(-0.6 + (t * 3.2), 0),
-          colors: const [Color(0xFF232320), Color(0xFF32322C), Color(0xFF232320)],
+          colors: [AppColors.shimmerBase, AppColors.shimmerHighlight, AppColors.shimmerBase],
         ),
       ),
     );
@@ -108,7 +108,7 @@ class HomeStateBlock extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.surface,
-              border: Border.all(color: const Color(0xFF2E2E29)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Icon(icon, size: 31, color: AppColors.faint),
           ),

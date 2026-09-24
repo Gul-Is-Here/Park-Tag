@@ -172,7 +172,7 @@ class _DateSeparator extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: const Color(0xFF2A2A26)),
+            border: Border.all(color: AppColors.border),
           ),
           child: Text(
             _label,
@@ -227,8 +227,8 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF262622))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -240,9 +240,9 @@ class _Header extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                border: Border.all(color: AppColors.border, width: 1.5),
               ),
-              child: const Icon(Icons.arrow_back, color: AppColors.ink, size: 18),
+              child: Icon(Icons.arrow_back, color: AppColors.ink, size: 18),
             ),
           ),
           const SizedBox(width: 12),
@@ -250,7 +250,7 @@ class _Header extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: const BoxDecoration(color: Color(0xFF2A2210), shape: BoxShape.circle),
-            child: const Icon(Icons.person_outline, size: 17, color: AppColors.yellow),
+            child: Icon(Icons.person_outline, size: 17, color: AppColors.yellow),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -273,7 +273,7 @@ class _Header extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: controller.vehicleColor,
                         borderRadius: BorderRadius.circular(2),
-                        border: Border.all(color: const Color(0xFF33332E)),
+                        border: Border.all(color: AppColors.border),
                       ),
                     ),
                     const SizedBox(width: 5),
@@ -308,7 +308,7 @@ class _IconButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+          border: Border.all(color: AppColors.border, width: 1.5),
         ),
         child: Icon(icon, size: 16, color: AppColors.ink),
       ),
@@ -356,9 +356,9 @@ class _InputBarState extends State<_InputBar> {
     final controller = widget.controller;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
-        border: Border(top: BorderSide(color: Color(0xFF262622))),
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -375,7 +375,7 @@ class _InputBarState extends State<_InputBar> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                border: Border.all(color: AppColors.border, width: 1.5),
               ),
               child: TextField(
                 controller: controller.textController,
@@ -404,7 +404,7 @@ class _InputBarState extends State<_InputBar> {
                 duration: const Duration(milliseconds: 160),
                 width: 42,
                 height: 42,
-                decoration: const BoxDecoration(color: AppColors.yellow, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.yellow, shape: BoxShape.circle),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
                   child: Icon(

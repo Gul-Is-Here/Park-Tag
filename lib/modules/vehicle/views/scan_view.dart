@@ -21,7 +21,7 @@ class ScanView extends GetView<ScanController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C0C),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -143,7 +143,7 @@ class _ChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF17171A),
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -281,7 +281,7 @@ class _CaptureState extends StatelessWidget {
             borderRadius: _cardCornerRadius,
           ),
           if (isLaunching)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 20),
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.yellow),
@@ -343,7 +343,7 @@ class _RoundIconButton extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.45),
+          color: AppColors.surface.withValues(alpha: 0.6),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: AppColors.ink, size: 18),

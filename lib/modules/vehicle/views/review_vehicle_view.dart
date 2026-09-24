@@ -30,7 +30,7 @@ class _RcCardImage extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+              border: Border.all(color: AppColors.border, width: 1.5),
               image: DecorationImage(
                 image: FileImage(File(path)),
                 fit: BoxFit.cover,
@@ -72,11 +72,11 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: const Color(0xFF33332E),
+                          color: AppColors.border,
                           width: 1.5,
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back,
                         color: AppColors.ink,
                         size: 18,
@@ -141,7 +141,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(
+                        SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
@@ -173,7 +173,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.refresh,
                             size: 16,
                             color: AppColors.yellow,
@@ -255,7 +255,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
                       hint: '14 Mar 2022',
                       readOnly: true,
                       onTap: () => controller.pickRegistrationDate(context),
-                      suffixIcon: const Icon(
+                      suffixIcon: Icon(
                         Icons.calendar_today_outlined,
                         size: 17,
                         color: AppColors.muted,
@@ -406,7 +406,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
           children: [
             const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.photo_camera_outlined,
                 color: AppColors.yellow,
               ),
@@ -417,7 +417,7 @@ class ReviewVehicleView extends GetView<ReviewVehicleController> {
               onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.photo_library_outlined,
                 color: AppColors.yellow,
               ),

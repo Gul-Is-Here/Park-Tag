@@ -33,10 +33,10 @@
 			<array>
 				<!-- Required by Firebase Phone Auth's reCAPTCHA fallback to redirect
 				     back into the app. Derived from GOOGLE_APP_ID in
-				     GoogleService-Info.plist ("1:391458076633:ios:4f5d4fd718e4229cfbcbc8"
-				     -> "app-1-391458076633-ios-4f5d4fd718e4229cfbcbc8"), since this
+				     GoogleService-Info.plist ("1:391458076633:ios:7cb0299e5abff29dfbcbc8"
+				     -> "app-1-391458076633-ios-7cb0299e5abff29dfbcbc8"), since this
 				     project has no Google Sign-In client (no REVERSED_CLIENT_ID). -->
-				<string>app-1-391458076633-ios-4f5d4fd718e4229cfbcbc8</string>
+				<string>app-1-391458076633-ios-7cb0299e5abff29dfbcbc8</string>
 			</array>
 		</dict>
 	</array>

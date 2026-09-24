@@ -19,7 +19,7 @@ class OnboardingDots extends StatelessWidget {
           width: active ? 22 : 6,
           height: 6,
           decoration: BoxDecoration(
-            color: active ? AppColors.yellow : const Color(0xFF33332E),
+            color: active ? AppColors.yellow : AppColors.border,
             borderRadius: BorderRadius.circular(3),
           ),
         );

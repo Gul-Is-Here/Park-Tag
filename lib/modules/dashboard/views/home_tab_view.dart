@@ -205,7 +205,7 @@ class _HeaderAction extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF2E2E29)),
+              border: Border.all(color: AppColors.border),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -329,7 +329,7 @@ class _AddVehicleButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.add_rounded,
                   size: 16,
                   color: AppColors.yellow,
@@ -368,7 +368,7 @@ class _VehiclesSkeleton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF2E2E29)),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [

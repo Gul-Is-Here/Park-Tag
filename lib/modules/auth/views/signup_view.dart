@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../../app/utils/auth_input.dart';
 import '../controllers/signup_controller.dart';
 import '../widgets/auth_brand_mark.dart';
 import '../widgets/auth_phone_field.dart';
@@ -41,6 +42,7 @@ class SignUpView extends GetView<SignUpController> {
                 hint: 'e.g. Ayesha Khan',
                 controller: controller.fullName,
                 textCapitalization: TextCapitalization.words,
+                inputFormatters: nameInputFormatters,
               ),
               const SizedBox(height: 20),
               AuthPhoneField(controller: controller.phone),
@@ -51,6 +53,7 @@ class SignUpView extends GetView<SignUpController> {
                 hint: '42101-1234567-1',
                 controller: controller.cnic,
                 keyboardType: TextInputType.number,
+                inputFormatters: cnicInputFormatters,
               ),
               const SizedBox(height: 32),
               Obx(

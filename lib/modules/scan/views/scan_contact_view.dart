@@ -21,7 +21,7 @@ class ScanContactView extends GetView<ScanContactController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.yellow));
+            return Center(child: CircularProgressIndicator(color: AppColors.yellow));
           }
           if (controller.notFound.value) {
             return const _NotFound();
@@ -64,7 +64,7 @@ class _NotFound extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.qr_code_2, size: 40, color: AppColors.faint),
+            Icon(Icons.qr_code_2, size: 40, color: AppColors.faint),
             const SizedBox(height: 16),
             Text(
               "This QR code doesn't match a ParkTag vehicle",
@@ -109,14 +109,14 @@ class _VehicleCard extends GetView<ScanContactController> {
                   child: controller.photoUrl.value.isEmpty
                       ? Container(
                           color: AppColors.background,
-                          child: const Icon(Icons.directions_car, color: AppColors.faint),
+                          child: Icon(Icons.directions_car, color: AppColors.faint),
                         )
                       : Image.network(
                           controller.photoUrl.value,
                           fit: BoxFit.cover,
                           errorBuilder: (_, _, _) => Container(
                             color: AppColors.background,
-                            child: const Icon(Icons.directions_car, color: AppColors.faint),
+                            child: Icon(Icons.directions_car, color: AppColors.faint),
                           ),
                         ),
                 ),
@@ -139,7 +139,7 @@ class _VehicleCard extends GetView<ScanContactController> {
                           decoration: BoxDecoration(
                             color: controller.vehicleColor,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: const Color(0xFF33332E)),
+                            border: Border.all(color: AppColors.border),
                           ),
                         ),
                         const SizedBox(width: 7),
@@ -164,11 +164,11 @@ class _VehicleCard extends GetView<ScanContactController> {
             decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
-                const Icon(Icons.confirmation_number_outlined, size: 16, color: AppColors.yellow),
+                Icon(Icons.confirmation_number_outlined, size: 16, color: AppColors.yellow),
                 const SizedBox(width: 8),
                 Text(controller.plateNumber.value, style: AppTextStyles.fieldValue.copyWith(color: AppColors.ink, letterSpacing: 0.5)),
                 const Spacer(),
-                const Icon(Icons.person_outline, size: 16, color: AppColors.muted),
+                Icon(Icons.person_outline, size: 16, color: AppColors.muted),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
@@ -218,7 +218,7 @@ class _MessageThread extends GetView<ScanContactController> {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+          border: Border.all(color: AppColors.border, width: 1.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +276,7 @@ class _MessageComposer extends GetView<ScanContactController> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+        border: Border.all(color: AppColors.border, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,13 +325,13 @@ class _MessageComposer extends GetView<ScanContactController> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (controller.isSending.value)
-                        const SizedBox(
+                        SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.background),
                         )
                       else
-                        const Icon(Icons.send_outlined, size: 16, color: AppColors.background),
+                        Icon(Icons.send_outlined, size: 16, color: AppColors.background),
                       const SizedBox(width: 8),
                       Text('Send message', style: AppTextStyles.buttonLabel.copyWith(color: AppColors.background, fontSize: 14)),
                     ],
@@ -450,7 +450,7 @@ class _DownloadAppBanner extends GetView<ScanContactController> {
         children: [
           Row(
             children: [
-              const Icon(Icons.mic_none, size: 18, color: AppColors.yellow),
+              Icon(Icons.mic_none, size: 18, color: AppColors.yellow),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

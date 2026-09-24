@@ -109,7 +109,7 @@ class VehicleFormField extends StatelessWidget {
                     borderSide: BorderSide(
                       color: emphasize
                           ? AppColors.yellow
-                          : const Color(0xFF33332E),
+                          : AppColors.border,
                       width: 1.5,
                     ),
                   ),
@@ -118,13 +118,13 @@ class VehicleFormField extends StatelessWidget {
                     borderSide: BorderSide(
                       color: emphasize
                           ? AppColors.yellow
-                          : const Color(0xFF33332E),
+                          : AppColors.border,
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                       color: AppColors.yellow,
                       width: 1.5,
                     ),

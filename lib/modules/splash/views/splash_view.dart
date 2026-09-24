@@ -207,7 +207,7 @@ class _LoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(
+        SizedBox(
           width: 26,
           height: 26,
           child: CircularProgressIndicator(

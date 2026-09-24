@@ -13,8 +13,8 @@ class OnboardingFrame extends StatelessWidget {
       height: 280,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF262622)),
-        gradient: const LinearGradient(
+        border: Border.all(color: AppColors.border),
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [AppColors.surface, Color(0xFF191919)],
@@ -46,10 +46,10 @@ class TagCarIllustration extends StatelessWidget {
                 color: AppColors.yellow,
                 borderRadius: BorderRadius.circular(9),
                 boxShadow: [
-                  BoxShadow(color: AppColors.yellow.withValues(alpha: 0.32), blurRadius: 24, offset: const Offset(0, 10)),
+                  BoxShadow(color: AppColors.yellow.withValues(alpha: 0.32), blurRadius: 24, offset: Offset(0, 10)),
                 ],
               ),
-              child: const Icon(Icons.qr_code_2, color: AppColors.background, size: 26),
+              child: Icon(Icons.qr_code_2, color: AppColors.background, size: 26),
             ),
           ),
         ],
@@ -62,7 +62,7 @@ class _CarSilhouettePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final stroke = Paint()
-      ..color = const Color(0xFF3A3A34)
+      ..color = AppColors.border
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round
@@ -81,9 +81,9 @@ class _CarSilhouettePainter extends CustomPainter {
     canvas.drawRRect(body, Paint()..color = const Color(0xFF242420));
     canvas.drawRRect(body, stroke);
 
-    canvas.drawCircle(const Offset(52, 104), 14, Paint()..color = AppColors.background);
+    canvas.drawCircle(Offset(52, 104), 14, Paint()..color = AppColors.background);
     canvas.drawCircle(const Offset(52, 104), 14, stroke);
-    canvas.drawCircle(const Offset(168, 104), 14, Paint()..color = AppColors.background);
+    canvas.drawCircle(Offset(168, 104), 14, Paint()..color = AppColors.background);
     canvas.drawCircle(const Offset(168, 104), 14, stroke);
 
     canvas.drawRRect(
@@ -117,11 +117,11 @@ class NotifiedIllustration extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFF33332E), width: 2),
+              border: Border.all(color: AppColors.border, width: 2),
             ),
             child: Column(
               children: [
-                Container(width: 34, height: 4, decoration: BoxDecoration(color: const Color(0xFF3A3A34), borderRadius: BorderRadius.circular(2))),
+                Container(width: 34, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
                 const SizedBox(height: 22),
                 Container(
                   width: 104,
@@ -148,9 +148,9 @@ class NotifiedIllustration extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.yellow,
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: AppColors.yellow.withValues(alpha: 0.32), blurRadius: 24, offset: const Offset(0, 10))],
+                boxShadow: [BoxShadow(color: AppColors.yellow.withValues(alpha: 0.32), blurRadius: 24, offset: Offset(0, 10))],
               ),
-              child: const Icon(Icons.notifications, color: AppColors.background, size: 17),
+              child: Icon(Icons.notifications, color: AppColors.background, size: 17),
             ),
           ),
         ],
@@ -173,27 +173,27 @@ class ResolveIllustration extends StatelessWidget {
           children: [
             Align(
               alignment: Alignment.centerLeft,
-              child: _bubble("You're blocking my exit", const Color(0xFF242420), AppColors.ink, BorderRadius.circular(12).copyWith(bottomLeft: const Radius.circular(4))),
+              child: _bubble("You're blocking my exit", Color(0xFF242420), AppColors.ink, BorderRadius.circular(12).copyWith(bottomLeft: Radius.circular(4))),
             ),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
-              child: _bubble('On my way!', AppColors.yellow, AppColors.background, BorderRadius.circular(12).copyWith(bottomRight: const Radius.circular(4)), bold: true),
+              child: _bubble('On my way!', AppColors.yellow, AppColors.background, BorderRadius.circular(12).copyWith(bottomRight: Radius.circular(4)), bold: true),
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF7FBF7F).withValues(alpha: 0.14),
-                border: Border.all(color: const Color(0xFF2A3D2A)),
+                color: AppColors.success.withValues(alpha: 0.14),
+                border: Border.all(color: AppColors.successBorder),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle, size: 13, color: Color(0xFF7FBF7F)),
-                  SizedBox(width: 6),
-                  Text('Resolved', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF7FBF7F))),
+                  Icon(Icons.check_circle, size: 13, color: AppColors.success),
+                  const SizedBox(width: 6),
+                  Text('Resolved', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.success)),
                 ],
               ),
             ),

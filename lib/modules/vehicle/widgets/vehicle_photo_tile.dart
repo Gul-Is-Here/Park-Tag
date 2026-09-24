@@ -58,7 +58,7 @@ class VehiclePhotoTile extends StatelessWidget {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.add_a_photo_outlined,
                           color: AppColors.yellow,
                           size: 24,
@@ -87,7 +87,7 @@ class VehiclePhotoTile extends StatelessWidget {
                       color: Colors.black.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
                       color: AppColors.ink,
                       size: 14,

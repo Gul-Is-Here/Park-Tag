@@ -36,15 +36,15 @@ class OtpDigitBox extends StatelessWidget {
           fillColor: AppColors.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF33332E), width: 1.5),
+            borderSide: BorderSide(color: AppColors.border, width: 1.5),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF33332E), width: 1.5),
+            borderSide: BorderSide(color: AppColors.border, width: 1.5),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.yellow, width: 1.5),
+            borderSide: BorderSide(color: AppColors.yellow, width: 1.5),
           ),
         ),
       ),

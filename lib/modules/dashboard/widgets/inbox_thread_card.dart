@@ -43,10 +43,10 @@ class InboxThreadCard extends StatelessWidget {
           curve: Curves.easeOut,
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           decoration: BoxDecoration(
-            color: unread ? const Color(0xFF211E16) : AppColors.surface,
+            color: unread ? Color(0xFF211E16) : AppColors.surface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: unread ? AppColors.yellow.withValues(alpha: 0.55) : const Color(0xFF2A2A26),
+              color: unread ? AppColors.yellow.withValues(alpha: 0.55) : AppColors.border,
             ),
             boxShadow: [
               BoxShadow(
@@ -164,9 +164,9 @@ class _Avatar extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: unread ? const Color(0xFF3A2F12) : const Color(0xFF262622),
+        color: unread ? const Color(0xFF3A2F12) : AppColors.border,
         border: Border.all(
-          color: unread ? AppColors.yellow.withValues(alpha: 0.7) : const Color(0xFF33332E),
+          color: unread ? AppColors.yellow.withValues(alpha: 0.7) : AppColors.border,
           width: 1.5,
         ),
       ),
@@ -196,7 +196,7 @@ class _PlateChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF2E2E29)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -207,7 +207,7 @@ class _PlateChip extends StatelessWidget {
             decoration: BoxDecoration(
               color: thread.vehicleColor,
               borderRadius: BorderRadius.circular(3),
-              border: Border.all(color: const Color(0xFF3A3A34)),
+              border: Border.all(color: AppColors.border),
             ),
           ),
           const SizedBox(width: 6),
@@ -233,19 +233,19 @@ class _ResolvedChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF16231A),
+        color: AppColors.successSurface,
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: const Color(0xFF2E4A33)),
+        border: Border.all(color: AppColors.successBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle_outline, size: 11, color: Color(0xFF7FBF7F)),
+          Icon(Icons.check_circle_outline, size: 11, color: AppColors.success),
           const SizedBox(width: 4),
           Text(
             'RESOLVED',
             style: AppTextStyles.overline.copyWith(
-              color: const Color(0xFF7FBF7F),
+              color: AppColors.success,
               letterSpacing: 0.4,
               fontSize: 9.5,
             ),

@@ -60,7 +60,7 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
                       color: vehicle.color,
-                      border: Border.all(color: const Color(0xFF33332E)),
+                      border: Border.all(color: AppColors.border),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -95,8 +95,8 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
                           data: vehicle.qrScanUrl,
                           size: 156,
                           backgroundColor: AppColors.ink,
-                          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.background),
-                          dataModuleStyle: const QrDataModuleStyle(
+                          eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.background),
+                          dataModuleStyle: QrDataModuleStyle(
                             dataModuleShape: QrDataModuleShape.square,
                             color: AppColors.background,
                           ),
@@ -125,19 +125,19 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
                     height: 48,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                      border: Border.all(color: AppColors.border, width: 1.5),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (controller.isSharing.value)
-                          const SizedBox(
+                          SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.yellow),
                           )
                         else
-                          const Icon(Icons.ios_share, size: 16, color: AppColors.yellow),
+                          Icon(Icons.ios_share, size: 16, color: AppColors.yellow),
                         const SizedBox(width: 8),
                         Text('Share QR Code', style: AppTextStyles.buttonLabel.copyWith(color: AppColors.ink, fontSize: 14)),
                       ],
@@ -176,7 +176,7 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
                         ),
                       ],
                     ),
-                    const Icon(Icons.confirmation_number_outlined, color: AppColors.yellow, size: 20),
+                    Icon(Icons.confirmation_number_outlined, color: AppColors.yellow, size: 20),
                   ],
                 ),
               ),
@@ -209,7 +209,7 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+                  border: Border.all(color: AppColors.border, width: 1.5),
                 ),
                 child: Column(
                   children: [
@@ -237,7 +237,7 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.edit_outlined, size: 17, color: AppColors.background),
+                      Icon(Icons.edit_outlined, size: 17, color: AppColors.background),
                       const SizedBox(width: 8),
                       Text(
                         'Edit Vehicle',
@@ -278,7 +278,7 @@ class VehicleDetailsView extends GetView<VehicleDetailsController> {
 }
 
 class _RoundIconButton extends StatelessWidget {
-  const _RoundIconButton({required this.icon, required this.onTap, this.iconColor = AppColors.ink});
+  _RoundIconButton({required this.icon, required this.onTap, Color? iconColor}) : iconColor = iconColor ?? AppColors.ink;
 
   final IconData icon;
   final VoidCallback onTap;
@@ -294,7 +294,7 @@ class _RoundIconButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+          border: Border.all(color: AppColors.border, width: 1.5),
         ),
         child: Icon(icon, size: 18, color: iconColor),
       ),
@@ -315,7 +315,7 @@ class _VehiclePhoto extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF33332E), width: 1.5),
+          border: Border.all(color: AppColors.border, width: 1.5),
           image: DecorationImage(
             image: path.startsWith('http') ? NetworkImage(path) : FileImage(File(path)) as ImageProvider,
             fit: BoxFit.cover,
@@ -339,7 +339,7 @@ class _InfoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFF262622))),
+        border: isLast ? null : Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,7 +358,7 @@ class _InfoRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: swatch,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFF33332E)),
+                      border: Border.all(color: AppColors.border),
                     ),
                   ),
                   const SizedBox(width: 8),

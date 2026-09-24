@@ -15,6 +15,7 @@ import 'app/services/onboarding_service.dart';
 import 'app/services/push_notification_service.dart';
 import 'app/services/rc_ocr_service.dart';
 import 'app/services/vehicle_service.dart';
+import 'app/theme/theme_controller.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -48,12 +49,17 @@ void main() async {
   // warning; it also decides what language the OTP SMS is written in.
   await FirebaseAuth.instance.setLanguageCode('en');
 
-  if (kDebugMode) {
+  // Opt-in only (`--dart-define=FAKE_PHONE_AUTH=true`): with app
+  // verification disabled, Firebase accepts ONLY the fictional test numbers
+  // from Firebase Console > Authentication > Phone. Real numbers then fail
+  // on iOS with "request does not contain a client identifier".
+  if (kDebugMode && const bool.fromEnvironment('FAKE_PHONE_AUTH')) {
     await FirebaseAuth.instance.setSettings(
       appVerificationDisabledForTesting: true,
     );
   }
 
+  Get.put(ThemeController(), permanent: true);
   Get.put<AuthService>(FirebaseAuthService(), permanent: true);
   Get.put<OnboardingService>(SharedPrefsOnboardingService(), permanent: true);
   Get.put<VehicleService>(FirebaseVehicleService(), permanent: true);
