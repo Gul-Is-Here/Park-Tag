@@ -1,7 +1,9 @@
 const { setGlobalOptions } = require("firebase-functions");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { defineSecret } = require("firebase-functions/params");
+const { defineSecret, defineString } = require("firebase-functions/params");
+const crypto = require("crypto");
+const { getAuth } = require("firebase-admin/auth");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
@@ -13,6 +15,13 @@ setGlobalOptions({ maxInstances: 10 });
 // Never hardcoded here, and never sent to the client — the app only ever
 // calls extractRcCardFields below, which holds the key server-side.
 const openAiApiKey = defineSecret("OPENAI_API_KEY");
+
+// Local SMS gateway for phone OTPs (replaces Firebase's own SMS, which is
+// unreliable to Pakistani carriers). Key: firebase functions:secrets:set SMS_API_KEY
+// URL/sender: set in functions/.env (see .env.example).
+const smsApiKey = defineSecret("SMS_API_KEY");
+const smsApiUrl = defineString("SMS_API_URL");
+const smsSenderId = defineString("SMS_SENDER_ID");
 
 initializeApp();
 const db = getFirestore();
@@ -407,3 +416,110 @@ exports.extractRcCardFields = onCall(
     return result;
   }
 );
+
+
+// ---------------------------------------------------------------------------
+// Phone OTP via local SMS gateway + Firebase custom token sign-in.
+// ---------------------------------------------------------------------------
+
+const OTP_TTL_MS = 5 * 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+const OTP_MAX_SENDS_PER_HOUR = 5;
+const PK_MOBILE = /^\+923\d{9}$/;
+
+const hashOtp = (phone, code) =>
+  crypto.createHash("sha256").update(`${phone}:${code}`).digest("hex");
+
+/** Fills SMS_API_URL's {key} {to} {sender} {message} placeholders. */
+async function sendSms(phone, message) {
+  const url = smsApiUrl
+    .value()
+    .replace("{key}", encodeURIComponent(smsApiKey.value()))
+    .replace("{to}", encodeURIComponent(phone.replace("+", "")))
+    .replace("{sender}", encodeURIComponent(smsSenderId.value()))
+    .replace("{message}", encodeURIComponent(message));
+  const response = await fetch(url);
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`SMS gateway returned ${response.status}: ${body}`);
+  }
+  logger.info(`sendSms: gateway response ${response.status}: ${body.slice(0, 200)}`);
+}
+
+/** Sends a 6-digit code to a +92 mobile number. No sign-in required. */
+exports.requestPhoneOtp = onCall({ secrets: [smsApiKey] }, async (request) => {
+  const phone = String(request.data?.phone || "");
+  if (!PK_MOBILE.test(phone)) {
+    throw new HttpsError("invalid-argument", "Enter a valid Pakistani mobile number.");
+  }
+
+  const ref = db.collection("phone_otps").doc(phone);
+  const now = Date.now();
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+
+  await db.runTransaction(async (tx) => {
+    const prev = (await tx.get(ref)).data() || {};
+    if (prev.lastSentAt && now - prev.lastSentAt < OTP_RESEND_COOLDOWN_MS) {
+      throw new HttpsError("resource-exhausted", "Please wait a minute before requesting another code.");
+    }
+    const windowStart = prev.windowStart && now - prev.windowStart < 3600000 ? prev.windowStart : now;
+    const sends = windowStart === prev.windowStart ? (prev.sends || 0) + 1 : 1;
+    if (sends > OTP_MAX_SENDS_PER_HOUR) {
+      throw new HttpsError("resource-exhausted", "Too many codes requested. Please try again in an hour.");
+    }
+    tx.set(ref, {
+      hash: hashOtp(phone, code),
+      expiresAt: now + OTP_TTL_MS,
+      attempts: 0,
+      lastSentAt: now,
+      windowStart,
+      sends,
+    });
+  });
+
+  try {
+    await sendSms(phone, `Your Park Tag verification code is ${code}. It expires in 5 minutes.`);
+  } catch (err) {
+    logger.error(`requestPhoneOtp: SMS send failed for ${phone}: ${err}`);
+    await ref.update({ hash: FieldValue.delete() });
+    throw new HttpsError("unavailable", "Could not send the code. Please try again.");
+  }
+  return { ok: true };
+});
+
+/** Checks the code and returns a Firebase custom token for that phone. */
+exports.verifyPhoneOtp = onCall(async (request) => {
+  const phone = String(request.data?.phone || "");
+  const code = String(request.data?.code || "");
+  if (!PK_MOBILE.test(phone) || !/^\d{6}$/.test(code)) {
+    throw new HttpsError("invalid-argument", "Invalid phone number or code.");
+  }
+
+  const ref = db.collection("phone_otps").doc(phone);
+  const ok = await db.runTransaction(async (tx) => {
+    const otp = (await tx.get(ref)).data();
+    if (!otp?.hash || Date.now() > otp.expiresAt) {
+      throw new HttpsError("deadline-exceeded", "This code has expired. Request a new one.");
+    }
+    if (otp.attempts >= OTP_MAX_ATTEMPTS) {
+      throw new HttpsError("resource-exhausted", "Too many wrong attempts. Request a new code.");
+    }
+    const match = crypto.timingSafeEqual(Buffer.from(otp.hash), Buffer.from(hashOtp(phone, code)));
+    tx.update(ref, match ? { hash: FieldValue.delete() } : { attempts: otp.attempts + 1 });
+    return match;
+  });
+  if (!ok) throw new HttpsError("permission-denied", "The code is incorrect.");
+
+  // Reuse the existing Firebase user for this number so their uid (and all
+  // their Firestore data) stays the same; create one on first sign-up.
+  const auth = getAuth();
+  let uid;
+  try {
+    uid = (await auth.getUserByPhoneNumber(phone)).uid;
+  } catch (err) {
+    if (err.code !== "auth/user-not-found") throw err;
+    uid = (await auth.createUser({ phoneNumber: phone })).uid;
+  }
+  return { token: await auth.createCustomToken(uid) };
+});

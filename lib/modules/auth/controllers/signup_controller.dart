@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
 import '../../../app/widgets/app_snackbar.dart';
+import '../../../app/utils/app_logger.dart';
 
 class SignUpController extends GetxController {
   final fullName = TextEditingController();
@@ -27,7 +28,18 @@ class SignUpController extends GetxController {
     final e164Phone = '+92${phone.text.trim()}';
     isSubmitting.value = true;
 
-    final alreadyRegistered = await _authService.phoneIsRegistered(e164Phone);
+    final bool alreadyRegistered;
+    try {
+      alreadyRegistered = await _authService.phoneIsRegistered(e164Phone);
+    } catch (e, stack) {
+      AppLogger.error('SignUp', e, stack);
+      isSubmitting.value = false;
+      AppSnackbar.show(
+        'Could not reach the server',
+        'Check your internet connection and try again.',
+      );
+      return;
+    }
     if (alreadyRegistered) {
       isSubmitting.value = false;
       AppSnackbar.show('Account already exists', 'This number is already registered — please log in instead.');

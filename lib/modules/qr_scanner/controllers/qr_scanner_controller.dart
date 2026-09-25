@@ -7,6 +7,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../app/services/conversation_service.dart';
 import '../../../app/utils/vehicle_color.dart';
 import '../../dashboard/models/message_thread_model.dart';
+import '../../../app/utils/app_logger.dart';
 
 /// Lets a signed-in resident scan another car's ParkTag QR sticker right
 /// from inside the app — no manual capture button, continuous autofocus,
@@ -112,7 +113,8 @@ class QrScannerController extends GetxController {
       );
     } on ResolveVehicleException catch (e) {
       await _resumeAfterError(e.message);
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('QrScanner', e, stack);
       await _resumeAfterError("Couldn't open that chat — please try again.");
     }
   }

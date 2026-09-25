@@ -6,6 +6,7 @@ import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../app/utils/app_logger.dart';
 
 enum RcCardSide { front, back }
 
@@ -109,7 +110,8 @@ class ScanController extends GetxController {
       errorMessage.value = "Couldn't open the scanner. Please try again.";
     } on MissingPluginException {
       isScannerUnavailable.value = true;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ScanCard', e, stack);
       errorMessage.value =
           "Something went wrong while scanning. Please try again.";
     } finally {

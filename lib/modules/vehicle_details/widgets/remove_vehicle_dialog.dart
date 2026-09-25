@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../../app/utils/app_logger.dart';
 
 const _destructive = Color(0xFFE5675E);
 
@@ -34,7 +35,8 @@ class _RemoveVehicleDialogState extends State<RemoveVehicleDialog> {
     try {
       await widget.onConfirm();
       if (mounted) Get.back(result: true);
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('RemoveVehicle', e, stack);
       if (!mounted) return;
       setState(() {
         _isDeleting = false;

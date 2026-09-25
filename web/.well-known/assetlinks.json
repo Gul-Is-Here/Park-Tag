@@ -3,8 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.parktagapp.app",
+      "package_name": "com.parktagapp.mobile",
       "sha256_cert_fingerprints": [
+        "BD:D2:C5:39:C0:45:C8:D7:F7:F4:E5:52:18:28:8F:46:EE:CE:56:AC:C2:94:72:AE:61:D5:BA:ED:A4:E2:64:8D",
         "20:60:F1:AE:DD:8B:B2:9C:10:19:BA:99:4A:60:A4:7B:92:F9:92:24:7D:B7:6C:14:41:A7:59:D9:D7:C6:41:25"
       ]
     }

@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "REPLACE_WITH_TEAMID.com.parktagapp.app",
+        "appID": "H2DH8AX4H9.com.parktagapp.mobile",
         "paths": ["/scan/*"]
       }
     ]

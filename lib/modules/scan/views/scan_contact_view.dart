@@ -433,7 +433,7 @@ class _DownloadAppBanner extends GetView<ScanContactController> {
   const _DownloadAppBanner();
 
   // TODO: replace with the real published store listings once ParkTag ships.
-  static const _playStoreUrl = 'https://play.google.com/store/apps/details?id=com.parktagapp.app';
+  static const _playStoreUrl = 'https://play.google.com/store/apps/details?id=com.parktagapp.mobile';
   static const _appStoreUrl = 'https://apps.apple.com/app/parktag/id0000000000';
 
   @override

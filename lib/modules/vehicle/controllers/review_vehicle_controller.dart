@@ -9,6 +9,7 @@ import '../../../app/services/vehicle_service.dart';
 import '../../../app/utils/vehicle_input.dart';
 import '../utils/card_validator.dart';
 import '../../../app/widgets/app_snackbar.dart';
+import '../../../app/utils/app_logger.dart';
 
 class ReviewVehicleController extends GetxController {
   ReviewVehicleController({
@@ -100,7 +101,8 @@ class ReviewVehicleController extends GetxController {
           'Please check the fields below and fill in anything missing.',
         );
       }
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ReviewVehicle', e, stack);
       ocrFailed.value = true;
       AppSnackbar.show(
         'Scan failed',
@@ -210,7 +212,8 @@ class ReviewVehicleController extends GetxController {
         'Vehicle saved',
         'Its QR sticker is ready — open the vehicle to view or share it.',
       );
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ReviewVehicle', e, stack);
       isSaving.value = false;
       AppSnackbar.show(
         'Could not save vehicle',

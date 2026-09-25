@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:391458076633:android:5560b0a8f3ca7ca3fbcbc8",
+        "mobilesdk_app_id": "1:391458076633:android:80be9faf86b18f26fbcbc8",
         "android_client_info": {
-          "package_name": "com.parktagapp.app"
+          "package_name": "com.parktagapp.mobile"
         }
       },
       "oauth_client": [],

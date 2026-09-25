@@ -11,6 +11,7 @@ import '../../../app/services/deep_link_service.dart';
 import '../../../app/services/vehicle_service.dart';
 import '../../../app/utils/vehicle_color.dart';
 import '../../../app/widgets/app_snackbar.dart';
+import '../../../app/utils/app_logger.dart';
 
 const _scannerIdPrefsKey = 'parktag_scanner_id';
 const _preferWebPrefsKey = 'parktag_prefer_web';
@@ -121,7 +122,8 @@ class ScanContactController extends GetxController {
       });
 
       appLinkUrl.value = _deepLinkService.scanLinkFor(vehicleId: vehicleId, scannerId: _scannerId);
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ScanContact', e, stack);
       isLoading.value = false;
       notFound.value = true;
     }
@@ -168,7 +170,8 @@ class ScanContactController extends GetxController {
         text: text,
       );
       messageController.clear();
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ScanContact', e, stack);
       AppSnackbar.show('Could not send', 'Something went wrong. Please try again.');
     } finally {
       isSending.value = false;
@@ -181,7 +184,8 @@ class ScanContactController extends GetxController {
     resolved.value = next;
     try {
       await _conversationService.setResolved(conversationId: conversationId, resolved: next);
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ScanContact', e, stack);
       resolved.value = !next;
     }
   }

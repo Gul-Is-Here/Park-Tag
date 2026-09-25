@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,6 +9,7 @@ import '../../../app/services/auth_service.dart';
 import '../../../app/services/deep_link_service.dart';
 import '../../../app/services/push_notification_service.dart';
 import '../../../app/widgets/app_snackbar.dart';
+import '../../../app/utils/app_logger.dart';
 
 class OtpController extends GetxController {
   static const codeLength = 6;
@@ -124,9 +126,28 @@ class OtpController extends GetxController {
         await _pushService.syncToken();
         Get.offAllNamed(AppRoutes.dashboard);
       }
-    } catch (_) {
+    } on FirebaseAuthException catch (e, stack) {
+      AppLogger.debug(
+        'PhoneAuth',
+        'verify failed\n'
+            '  code: ${e.code}\n'
+            '  message: ${e.message}\n$stack',
+      );
       isVerifying.value = false;
-      AppSnackbar.show('Verification failed', 'The code was incorrect or expired. Please try again.');
+      final wrongCode =
+          e.code == 'invalid-verification-code' || e.code == 'session-expired';
+      AppSnackbar.show(
+        'Verification failed',
+        wrongCode
+            ? 'The code was incorrect or expired. Please try again.'
+            : describeAuthFailure(e),
+      );
+    } catch (e, stack) {
+      // Not an OTP problem — e.g. saving the profile or push token failed
+      // after sign-in succeeded — so don't blame the code.
+      AppLogger.debug('PhoneAuth', 'verify failed (after sign-in): $e\n$stack');
+      isVerifying.value = false;
+      AppSnackbar.show('Something went wrong', 'Please try again.');
     }
   }
 

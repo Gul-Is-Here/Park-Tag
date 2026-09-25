@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/app_logger.dart';
 
 /// The single place every snackbar in the app is styled.
 ///
@@ -24,6 +25,7 @@ abstract final class AppSnackbar {
     Widget? icon,
     SnackPosition position = SnackPosition.BOTTOM,
   }) {
+    AppLogger.debug('Snackbar', '$title — $message');
     final isTop = position == SnackPosition.TOP;
     Get.snackbar(
       title,

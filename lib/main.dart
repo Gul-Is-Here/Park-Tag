@@ -30,11 +30,9 @@ void main() async {
         ? AndroidProvider.debug
         : AndroidProvider.playIntegrity,
     appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
-    // TODO: swap in a real reCAPTCHA v3 site key (Firebase Console > App
-    // Check > Web app > reCAPTCHA v3) before shipping the web build —
-    // without it, web requests fail the same way the app was failing
-    // before this fix.
-    webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key-REPLACE-ME'),
+    // Score-based reCAPTCHA Enterprise key, scoped to car-ping-9d4f8.web.app
+    // and car-ping-9d4f8.firebaseapp.com (gcloud recaptcha keys create).
+    webProvider: ReCaptchaEnterpriseProvider('6LfAFM8tAAAAAEQxVDcuReqjALuzxSxFaUbdI0Y3'),
   );
 
   // Must be registered before runApp so FCM can hand it background/
@@ -54,12 +52,20 @@ void main() async {
   // from Firebase Console > Authentication > Phone. Real numbers then fail
   // on iOS with "request does not contain a client identifier".
   if (kDebugMode && const bool.fromEnvironment('FAKE_PHONE_AUTH')) {
+    debugPrint(
+      '[PhoneAuth] FAKE_PHONE_AUTH is ON — app verification disabled. Only '
+      'Firebase test numbers will work; real numbers fail with '
+      '"missing-client-identifier". Run without --dart-define=FAKE_PHONE_AUTH=true '
+      'to use real numbers.',
+    );
     await FirebaseAuth.instance.setSettings(
       appVerificationDisabledForTesting: true,
     );
   }
 
   Get.put(ThemeController(), permanent: true);
+  // Firebase's native Phone Auth (real SMS via Firebase); FAKE_PHONE_AUTH
+  // additionally disables app verification so Console test numbers work.
   Get.put<AuthService>(FirebaseAuthService(), permanent: true);
   Get.put<OnboardingService>(SharedPrefsOnboardingService(), permanent: true);
   Get.put<VehicleService>(FirebaseVehicleService(), permanent: true);

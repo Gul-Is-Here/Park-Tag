@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyBX_cqFe04q6rfg8H5bBWv4XpEpwW4uN7o',
-    appId: '1:391458076633:web:b10d4cba1ad21c05fbcbc8',
+    appId: '1:391458076633:web:0059354723ff9a08fbcbc8',
     messagingSenderId: '391458076633',
     projectId: 'car-ping-9d4f8',
     authDomain: 'car-ping-9d4f8.firebaseapp.com',
@@ -51,31 +51,31 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyC1euBHJwicf_4qHj8dtmLSaCZo07MvnHU',
-    appId: '1:391458076633:android:5560b0a8f3ca7ca3fbcbc8',
+    appId: '1:391458076633:android:80be9faf86b18f26fbcbc8',
     messagingSenderId: '391458076633',
     projectId: 'car-ping-9d4f8',
     storageBucket: 'car-ping-9d4f8.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDlIjaOZdYiVoZr9t8b5L6eBLnjIqFZS3M',
-    appId: '1:391458076633:ios:7cb0299e5abff29dfbcbc8',
+    appId: '1:391458076633:ios:b7ffbfec4ec36ee5fbcbc8',
     messagingSenderId: '391458076633',
     projectId: 'car-ping-9d4f8',
     storageBucket: 'car-ping-9d4f8.firebasestorage.app',
-    iosBundleId: 'com.parktagapp.app',
+    iosBundleId: 'com.parktagapp.mobile',
   );
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDlIjaOZdYiVoZr9t8b5L6eBLnjIqFZS3M',
-    appId: '1:391458076633:ios:7cb0299e5abff29dfbcbc8',
+    appId: '1:391458076633:ios:b7ffbfec4ec36ee5fbcbc8',
     messagingSenderId: '391458076633',
     projectId: 'car-ping-9d4f8',
     storageBucket: 'car-ping-9d4f8.firebasestorage.app',
-    iosBundleId: 'com.parktagapp.app',
+    iosBundleId: 'com.parktagapp.mobile',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBX_cqFe04q6rfg8H5bBWv4XpEpwW4uN7o',
-    appId: '1:391458076633:web:ce99e9bcd1bc7afefbcbc8',
+    appId: '1:391458076633:web:ad9e7dd0183e29acfbcbc8',
     messagingSenderId: '391458076633',
     projectId: 'car-ping-9d4f8',
     authDomain: 'car-ping-9d4f8.firebaseapp.com',

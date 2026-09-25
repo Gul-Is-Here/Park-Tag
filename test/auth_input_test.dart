@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:parktag_app/app/services/auth_service.dart';
 import 'package:parktag_app/app/utils/auth_input.dart';
 
 String _apply(List<TextInputFormatter> formatters, String input) {
@@ -22,5 +24,10 @@ void main() {
     expect(_apply(cnicInputFormatters, '421011'), '42101-1');
     expect(_apply(cnicInputFormatters, '4210112345671'), '42101-1234567-1');
     expect(_apply(cnicInputFormatters, '42101123456719999'), '42101-1234567-1');
+  });
+
+  test('Firebase error code 39 gets a readable message', () {
+    final e = FirebaseAuthException(code: 'internal-error', message: 'An internal error has occurred. [ Error code:39 ]');
+    expect(describeAuthFailure(e), contains('too many recent attempts'));
   });
 }

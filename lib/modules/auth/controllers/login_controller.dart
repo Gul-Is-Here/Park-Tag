@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../app/services/auth_service.dart';
 import '../../../app/widgets/app_snackbar.dart';
+import '../../../app/utils/app_logger.dart';
 
 class LoginController extends GetxController {
   final phone = TextEditingController();
@@ -24,7 +25,18 @@ class LoginController extends GetxController {
 
     // FR-01.2: only a registered resident can log in — anyone else is sent
     // to sign up first.
-    final registered = await _authService.phoneIsRegistered(e164Phone);
+    final bool registered;
+    try {
+      registered = await _authService.phoneIsRegistered(e164Phone);
+    } catch (e, stack) {
+      AppLogger.error('Login', e, stack);
+      isSubmitting.value = false;
+      AppSnackbar.show(
+        'Could not reach the server',
+        'Check your internet connection and try again.',
+      );
+      return;
+    }
     if (!registered) {
       isSubmitting.value = false;
       AppSnackbar.show('No account found', 'This number is not registered yet — please sign up first.');

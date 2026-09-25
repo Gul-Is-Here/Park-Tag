@@ -11,6 +11,7 @@ import '../utils/vehicle_color.dart';
 import 'auth_service.dart';
 import 'conversation_service.dart';
 import '../widgets/app_snackbar.dart';
+import '../utils/app_logger.dart';
 
 /// A vehicle's QR sticker/scan link carries a `vehicleId` that arrived via
 /// a deep link before the app could resolve it — either because the app
@@ -159,7 +160,8 @@ class AppLinksDeepLinkService implements DeepLinkService {
       // which the backend adopts on its own below.
       try {
         await conversationService.linkScannerIdentity(scannerId: anonymousScannerId, uid: uid);
-      } catch (_) {
+      } catch (e, stack) {
+        AppLogger.error('DeepLink', e, stack);
         // Non-fatal — the conversation for THIS vehicle is still adopted
         // by resolveVehicleAndOpenChat.
       }
@@ -188,7 +190,8 @@ class AppLinksDeepLinkService implements DeepLinkService {
       );
     } on ResolveVehicleException catch (e) {
       AppSnackbar.show('Could not open chat', e.message);
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('DeepLink', e, stack);
       AppSnackbar.show('Could not open chat', 'Please try scanning again.');
     }
   }

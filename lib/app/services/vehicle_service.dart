@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../utils/app_logger.dart';
 
 /// Wraps Firestore/Storage for vehicle records (FR-02) so controllers never
 /// touch the Firebase SDKs directly, and can be tested against a fake.
@@ -128,7 +129,8 @@ class FirebaseVehicleService implements VehicleService {
       try {
         final listing = await _storage.ref(path).listAll();
         await Future.wait(listing.items.map((ref) => ref.delete()));
-      } catch (_) {
+      } catch (e, stack) {
+        AppLogger.error('VehicleService', e, stack);
         // Best-effort: a folder nothing was ever uploaded to, or a
         // partial delete, should never block removing the record itself.
       }

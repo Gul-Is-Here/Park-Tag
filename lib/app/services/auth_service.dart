@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../utils/app_logger.dart';
 
 /// Wraps Firebase Phone Auth + the Firestore `users` collection so
 /// controllers never touch the Firebase SDKs directly (and can be tested
@@ -81,6 +83,15 @@ abstract class AuthService {
 String describeAuthFailure(FirebaseAuthException e) {
   final raw = e.message ?? '';
 
+  // Firebase's server-side anti-abuse block (TOO_MANY_ATTEMPTS). Arrives as
+  // a generic "internal error" whose only clue is this bracketed code, and
+  // typically hits real numbers after heavy testing while test numbers
+  // still work. It can last 24h+ and nothing client-side lifts it.
+  if (raw.contains('Error code:39') || raw.contains('error-code:-39')) {
+    return "We can't send a code to this number right now because of too many "
+        'recent attempts. Please try again later.';
+  }
+
   if (raw.contains('region enabled by the app developer')) {
     return 'SMS to this country is blocked for this Firebase project. '
         'Enable it under Authentication > Settings > SMS region policy.';
@@ -101,6 +112,19 @@ String describeAuthFailure(FirebaseAuthException e) {
       return 'No connection. Check your internet and try again.';
     case 'operation-not-allowed':
       return 'Phone sign-in is not enabled for this Firebase project.';
+    case 'web-context-cancelled':
+    case 'web-context-already-presented':
+      return 'The verification page was closed before it finished. Please try again.';
+    case 'captcha-check-failed':
+    case 'invalid-recaptcha-token':
+    case 'missing-recaptcha-token':
+    case 'invalid-recaptcha-action':
+    case 'recaptcha-not-enabled':
+      return "Couldn't complete the reCAPTCHA check. Please try again.";
+    case 'missing-client-identifier':
+    case 'invalid-app-credential':
+    case 'missing-app-credential':
+      return "This device couldn't be verified by Firebase. Please try again.";
     default:
       return raw.isEmpty ? 'Verification failed. Please try again.' : raw;
   }
@@ -110,29 +134,70 @@ class FirebaseAuthService implements AuthService {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
 
+  /// Android's resend token per number, from the last `codeSent`. Without
+  /// passing it back as `forceResendingToken`, a repeat request for the
+  /// same number inside the timeout window reuses the pending verification
+  /// and no new SMS goes out — so "Resend code" silently did nothing.
+  final _resendTokens = <String, int>{};
+
   @override
   Future<void> sendOtp({
     required String e164Phone,
     required void Function(String verificationId) onCodeSent,
     required void Function(String message) onError,
   }) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: e164Phone,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (credential) async {
-        // Android instant/auto verification — sign in right away; the
-        // resident may already have moved on to the OTP screen, which is
-        // fine, Get.offAllNamed from there just becomes a no-op re-entry.
-        try {
-          await _auth.signInWithCredential(credential);
-        } catch (_) {
-          // Fall through — the resident still completes verification
-          // manually on the OTP screen.
-        }
-      },
-      verificationFailed: (e) => onError(describeAuthFailure(e)),
-      codeSent: (verificationId, _) => onCodeSent(verificationId),
-      codeAutoRetrievalTimeout: (_) {},
+    final watch = Stopwatch()..start();
+    final forced = _resendTokens.containsKey(e164Phone) ? ' (forced resend)' : '';
+    AppLogger.debug('PhoneAuth', 'verifyPhoneNumber start for $e164Phone$forced');
+    try {
+      await _auth.verifyPhoneNumber(
+        phoneNumber: e164Phone,
+        forceResendingToken: _resendTokens[e164Phone],
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (credential) async {
+          AppLogger.debug('PhoneAuth', 'auto-verified after ${watch.elapsedMilliseconds}ms');
+          // Android instant/auto verification — sign in right away; the
+          // resident may already have moved on to the OTP screen, which is
+          // fine, Get.offAllNamed from there just becomes a no-op re-entry.
+          try {
+            await _auth.signInWithCredential(credential);
+          } catch (e) {
+            AppLogger.debug('PhoneAuth', 'auto sign-in failed: $e');
+            // Fall through — the resident still completes verification
+            // manually on the OTP screen.
+          }
+        },
+        verificationFailed: (e) {
+          _logAuthFailure('verificationFailed', e, watch);
+          onError(describeAuthFailure(e));
+        },
+        codeSent: (verificationId, resendToken) {
+          if (resendToken != null) _resendTokens[e164Phone] = resendToken;
+          AppLogger.debug('PhoneAuth', 'codeSent after ${watch.elapsedMilliseconds}ms');
+          onCodeSent(verificationId);
+        },
+        codeAutoRetrievalTimeout: (_) {
+          AppLogger.debug('PhoneAuth', 'auto-retrieval timed out after ${watch.elapsedMilliseconds}ms');
+        },
+      );
+    } on FirebaseAuthException catch (e) {
+      // iOS reports some failures (e.g. reCAPTCHA / app-verification
+      // problems) by throwing here rather than through verificationFailed.
+      _logAuthFailure('verifyPhoneNumber threw', e, watch);
+      onError(describeAuthFailure(e));
+    } catch (e, stack) {
+      AppLogger.debug('PhoneAuth', 'verifyPhoneNumber threw after ${watch.elapsedMilliseconds}ms: $e\n$stack');
+      onError('Verification failed. Please try again.');
+    }
+  }
+
+  void _logAuthFailure(String where, FirebaseAuthException e, Stopwatch watch) {
+    AppLogger.debug(
+      'PhoneAuth',
+      '$where after ${watch.elapsedMilliseconds}ms\n'
+      '  code: ${e.code}\n'
+      '  message: ${e.message}\n'
+      '  plugin: ${e.plugin}',
     );
   }
 
@@ -147,8 +212,20 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<bool> phoneIsRegistered(String e164Phone) async {
-    final snapshot = await _firestore.collection('users').where('phone', isEqualTo: e164Phone).limit(1).get();
-    return snapshot.docs.isNotEmpty;
+    final watch = Stopwatch()..start();
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('phone', isEqualTo: e164Phone)
+          .limit(1)
+          .get()
+          .timeout(const Duration(seconds: 15));
+      AppLogger.debug('PhoneAuth', 'phoneIsRegistered lookup took ${watch.elapsedMilliseconds}ms');
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      AppLogger.debug('PhoneAuth', 'phoneIsRegistered failed after ${watch.elapsedMilliseconds}ms: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -217,4 +294,61 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<void> signOut() => _auth.signOut();
+}
+
+/// Phone OTP through our own Cloud Functions + local SMS gateway instead of
+/// Firebase's SMS (unreliable to Pakistani carriers, and prone to "Error
+/// code:39" blocks). The server returns a Firebase custom token, so the
+/// resident still ends up a normal Firebase Auth user with the same uid —
+/// Firestore, Storage, rules and push are all unchanged.
+///
+/// Errors are re-thrown as [FirebaseAuthException]s with the codes the OTP
+/// screen already understands, so no controller had to change.
+class CustomOtpAuthService extends FirebaseAuthService {
+  final _functions = FirebaseFunctions.instance;
+
+  @override
+  Future<void> sendOtp({
+    required String e164Phone,
+    required void Function(String verificationId) onCodeSent,
+    required void Function(String message) onError,
+  }) async {
+    final watch = Stopwatch()..start();
+    try {
+      await _functions.httpsCallable('requestPhoneOtp').call({'phone': e164Phone});
+      AppLogger.debug('PhoneAuth', 'custom OTP sent after ${watch.elapsedMilliseconds}ms');
+      // The phone number doubles as the "verification id" for confirmOtp.
+      onCodeSent(e164Phone);
+    } on FirebaseFunctionsException catch (e, stack) {
+      AppLogger.error('PhoneAuth', e, stack);
+      onError(e.message ?? 'Could not send the code. Please try again.');
+    } catch (e, stack) {
+      AppLogger.error('PhoneAuth', e, stack);
+      onError('Could not send the code. Check your connection and try again.');
+    }
+  }
+
+  @override
+  Future<String> confirmOtp({required String verificationId, required String smsCode}) async {
+    final String token;
+    try {
+      final result = await _functions.httpsCallable('verifyPhoneOtp').call({
+        'phone': verificationId,
+        'code': smsCode,
+      });
+      token = (result.data as Map)['token'] as String;
+    } on FirebaseFunctionsException catch (e) {
+      final code = switch (e.code) {
+        'permission-denied' => 'invalid-verification-code',
+        'deadline-exceeded' => 'session-expired',
+        'resource-exhausted' => 'too-many-requests',
+        _ => 'internal-error',
+      };
+      throw FirebaseAuthException(code: code, message: e.message);
+    }
+    final signedIn = await FirebaseAuth.instance.signInWithCustomToken(token);
+    final uid = signedIn.user?.uid;
+    if (uid == null) throw Exception('Sign-in failed. Please try again.');
+    return uid;
+  }
 }

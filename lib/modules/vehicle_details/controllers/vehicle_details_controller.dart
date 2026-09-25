@@ -15,6 +15,7 @@ import '../../dashboard/controllers/home_tab_controller.dart';
 import '../../dashboard/models/vehicle_model.dart';
 import '../widgets/remove_vehicle_dialog.dart';
 import '../../../app/widgets/app_snackbar.dart';
+import '../../../app/utils/app_logger.dart';
 
 class VehicleDetailsController extends GetxController {
   VehicleDetailsController({required VehicleModel vehicle}) : _vehicle = vehicle.obs;
@@ -84,7 +85,8 @@ class VehicleDetailsController extends GetxController {
           text: 'Scan this to reach me about my ${vehicle.plateNumber} — via ParkTag.',
         ),
       );
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('VehicleDetails', e, stack);
       AppSnackbar.show('Could not share', 'Something went wrong generating the QR image.');
     } finally {
       isSharing.value = false;
